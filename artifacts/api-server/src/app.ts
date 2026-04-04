@@ -34,7 +34,9 @@ app.use(cors({ credentials: true, origin: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(clerkMiddleware());
+app.use(clerkMiddleware({
+  authorizedParties: ['https://forgedba.com', 'https://www.forgedba.com'],
+}));
 
 app.use("/api", router);
 

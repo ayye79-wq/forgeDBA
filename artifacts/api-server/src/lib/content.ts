@@ -671,12 +671,12 @@ export function getModuleDetail(moduleId: string, isPremium: boolean) {
     ...m,
     isLocked,
     lessons: isLocked
-      ? sortedLessons.map(l => ({
+      ? sortedLessons.map((l, idx) => ({
           id: l.id,
           title: l.title,
           type: l.type,
           order: l.order,
-          content: "",
+          content: idx === 0 ? l.content : "",
         }))
       : sortedLessons,
   };

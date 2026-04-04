@@ -49,10 +49,8 @@ export default function ModulePlayer() {
   const moduleProgress = progress?.find(p => p.moduleId === moduleId);
   const completedLessonIds = moduleProgress?.completedLessonIds || [];
 
-  // Set initial active lesson
   useEffect(() => {
     if (moduleData?.lessons && !activeLessonId) {
-      // Find first incomplete lesson, or just use the first lesson
       const firstIncomplete = moduleData.lessons.find(l => !completedLessonIds.includes(l.id));
       setActiveLessonId(firstIncomplete?.id || moduleData.lessons[0].id);
     }
@@ -68,7 +66,7 @@ export default function ModulePlayer() {
       onSuccess: (data) => {
         window.location.href = data.url;
       },
-      onError: (err) => {
+      onError: () => {
         toast({
           title: "Error",
           description: "Failed to initiate checkout. Please try again.",
@@ -91,12 +89,9 @@ export default function ModulePlayer() {
           title: "Lesson completed!",
           description: "Great job. Keep the momentum going.",
         });
-        
-        // Auto advance if not last lesson
         if (!isLastLesson && moduleData) {
           const nextLesson = moduleData.lessons[activeLessonIndex + 1];
           setActiveLessonId(nextLesson.id);
-          // reset states
           setSelectedOption("");
           setCheckedItems({});
         }
@@ -124,56 +119,9 @@ export default function ModulePlayer() {
 
   if (!moduleData) return <div className="p-8 text-center">Module not found</div>;
 
-  // Paywall overlay for locked modules
-  if (moduleData.isLocked) {
-    return (
-      <div className="container max-w-4xl mx-auto py-12 px-4">
-        <Link href="/modules">
-          <Button variant="ghost" className="mb-6 -ml-4 text-muted-foreground hover:text-foreground">
-            <ChevronLeft className="mr-2 h-4 w-4" /> Back to Modules
-          </Button>
-        </Link>
-        <div className="relative overflow-hidden rounded-xl border border-border bg-card p-12 text-center">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background"></div>
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center mb-6 text-primary">
-              <Lock className="h-10 w-10" />
-            </div>
-            <h1 className="text-3xl font-bold mb-4">{moduleData.title}</h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl">
-              This module covers advanced DBA techniques and requires premium access.
-              Unlock the full course to access all training materials, scenarios, and labs.
-            </p>
-            <Button 
-              size="lg" 
-              className="h-14 px-8 text-lg shadow-lg shadow-primary/20"
-              onClick={handleUnlock}
-              disabled={createCheckoutSession.isPending}
-            >
-              {createCheckoutSession.isPending ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Sparkles className="mr-2 h-5 w-5" />}
-              Unlock Full Course
-            </Button>
-            <div className="mt-8 pt-8 border-t border-border/40 w-full max-w-md text-left">
-              <h3 className="font-semibold mb-4 text-center">What's included in this module:</h3>
-              <ul className="space-y-3 text-sm text-muted-foreground">
-                {moduleData.lessons.slice(0, 5).map(l => (
-                  <li key={l.id} className="flex items-start">
-                    <CheckCircle2 className="h-4 w-4 mr-2 text-primary shrink-0 mt-0.5" />
-                    <span>{l.title}</span>
-                  </li>
-                ))}
-                {moduleData.lessons.length > 5 && (
-                  <li className="text-center text-xs italic pt-2">
-                    + {moduleData.lessons.length - 5} more lessons
-                  </li>
-                )}
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // For locked modules: show scenario preview on first lesson, paywall gate on others
+  const isPreviewLesson = moduleData.isLocked && activeLessonIndex === 0;
+  const isPaywalled = moduleData.isLocked && activeLessonIndex > 0;
 
   const renderLessonIcon = (type: string) => {
     switch(type) {
@@ -188,6 +136,53 @@ export default function ModulePlayer() {
     }
   };
 
+  const renderPaywallGate = () => (
+    <div className="max-w-2xl mx-auto py-12 px-4">
+      <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-card p-10 text-center shadow-2xl shadow-primary/5">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background rounded-2xl"></div>
+        <div className="relative z-10 flex flex-col items-center">
+          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-5 text-primary border border-primary/20">
+            <Lock className="h-8 w-8" />
+          </div>
+          <h2 className="text-2xl font-bold mb-2">You've seen what's coming</h2>
+          <p className="text-muted-foreground mb-6 max-w-md">
+            This module has <strong className="text-foreground">{moduleData.lessons.length - 1} more lessons</strong> including 
+            hands-on labs, simulations, and a complete DBA checklist. Unlock everything for a one-time fee.
+          </p>
+          <Button
+            size="lg"
+            className="h-13 px-8 text-base font-semibold shadow-lg shadow-primary/20 mb-4"
+            onClick={handleUnlock}
+            disabled={createCheckoutSession.isPending}
+          >
+            {createCheckoutSession.isPending 
+              ? <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              : <Sparkles className="mr-2 h-5 w-5" />
+            }
+            Unlock Full Course — $69
+          </Button>
+          <p className="text-xs text-muted-foreground">One-time payment · All 5 modules · No subscription</p>
+          <div className="mt-8 pt-6 border-t border-border/40 w-full text-left">
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-3 text-center">What's inside this module</p>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              {moduleData.lessons.slice(1, 6).map(l => (
+                <li key={l.id} className="flex items-center gap-2">
+                  <Lock className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+                  <span className="text-muted-foreground/70">{l.title}</span>
+                </li>
+              ))}
+              {moduleData.lessons.length > 6 && (
+                <li className="text-xs text-muted-foreground/50 text-center pt-1">
+                  + {moduleData.lessons.length - 6} more lessons
+                </li>
+              )}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderLessonContent = (lesson: Lesson) => {
     return (
       <div className="max-w-4xl mx-auto pb-24">
@@ -195,6 +190,11 @@ export default function ModulePlayer() {
           <div className="flex items-center gap-2 text-sm font-medium text-primary mb-3">
             {renderLessonIcon(lesson.type)}
             <span className="uppercase tracking-wider">{lesson.type}</span>
+            {isPreviewLesson && (
+              <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary font-normal">
+                Free Preview
+              </span>
+            )}
           </div>
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">{lesson.title}</h1>
         </div>
@@ -227,7 +227,6 @@ export default function ModulePlayer() {
                 </div>
               ))}
             </RadioGroup>
-            
             {selectedOption !== "" && lesson.correctOption !== undefined && (
               <div className={`p-4 rounded-lg mt-6 ${parseInt(selectedOption) === lesson.correctOption ? 'bg-green-500/10 border border-green-500/30' : 'bg-destructive/10 border border-destructive/30'}`}>
                 <div className="flex items-center gap-2 mb-2 font-bold">
@@ -264,41 +263,59 @@ export default function ModulePlayer() {
 
         <Separator className="my-8" />
 
-        <div className="flex items-center justify-between">
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              if (activeLessonIndex > 0 && moduleData) {
-                setActiveLessonId(moduleData.lessons[activeLessonIndex - 1].id);
-                setSelectedOption("");
-                setCheckedItems({});
+        {isPreviewLesson ? (
+          <div className="flex flex-col items-center gap-4 py-4">
+            <p className="text-sm text-muted-foreground">That's the scenario. Ready to learn how to handle it?</p>
+            <Button
+              size="lg"
+              className="px-8 font-semibold shadow-lg shadow-primary/20"
+              onClick={handleUnlock}
+              disabled={createCheckoutSession.isPending}
+            >
+              {createCheckoutSession.isPending 
+                ? <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                : <Sparkles className="mr-2 h-5 w-5" />
               }
-            }}
-            disabled={activeLessonIndex === 0}
-          >
-            <ChevronLeft className="mr-2 h-4 w-4" /> Previous
-          </Button>
-          
-          <Button 
-            size="lg"
-            className="px-8 font-semibold"
-            disabled={
-              updateProgress.isPending || 
-              (lesson.type === 'simulation' && selectedOption === "") ||
-              (lesson.type === 'checklist' && lesson.checklistItems && Object.keys(checkedItems).filter(k => checkedItems[k]).length !== lesson.checklistItems.length)
-            }
-            onClick={handleMarkComplete}
-          >
-            {updateProgress.isPending ? (
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-            ) : isCompleted ? (
-              <CheckCircle2 className="mr-2 h-5 w-5" />
-            ) : null}
-            {isCompleted 
-              ? (isLastLesson ? "Module Completed" : "Continue to Next") 
-              : "Mark Complete"}
-          </Button>
-        </div>
+              Unlock Full Course — $69
+            </Button>
+            <p className="text-xs text-muted-foreground">One-time payment · All 5 modules · No subscription</p>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                if (activeLessonIndex > 0 && moduleData) {
+                  setActiveLessonId(moduleData.lessons[activeLessonIndex - 1].id);
+                  setSelectedOption("");
+                  setCheckedItems({});
+                }
+              }}
+              disabled={activeLessonIndex === 0}
+            >
+              <ChevronLeft className="mr-2 h-4 w-4" /> Previous
+            </Button>
+            <Button 
+              size="lg"
+              className="px-8 font-semibold"
+              disabled={
+                updateProgress.isPending || 
+                (lesson.type === 'simulation' && selectedOption === "") ||
+                (lesson.type === 'checklist' && lesson.checklistItems && Object.keys(checkedItems).filter(k => checkedItems[k]).length !== lesson.checklistItems.length)
+              }
+              onClick={handleMarkComplete}
+            >
+              {updateProgress.isPending ? (
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              ) : isCompleted ? (
+                <CheckCircle2 className="mr-2 h-5 w-5" />
+              ) : null}
+              {isCompleted 
+                ? (isLastLesson ? "Module Completed" : "Continue to Next") 
+                : "Mark Complete"}
+            </Button>
+          </div>
+        )}
       </div>
     );
   };
@@ -314,34 +331,50 @@ export default function ModulePlayer() {
             </Button>
           </Link>
           <h2 className="font-bold text-lg leading-tight line-clamp-2">{moduleData.title}</h2>
-          <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground font-medium">
-            <span className="text-primary">{Math.round((completedLessonIds.length / moduleData.lessons.length) * 100)}%</span>
-            <span>Complete</span>
-          </div>
+          {moduleData.isLocked && (
+            <div className="mt-2 flex items-center gap-1.5 text-xs text-primary font-medium">
+              <Lock className="h-3 w-3" />
+              <span>Free preview — Lesson 1 only</span>
+            </div>
+          )}
+          {!moduleData.isLocked && (
+            <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground font-medium">
+              <span className="text-primary">{Math.round((completedLessonIds.length / moduleData.lessons.length) * 100)}%</span>
+              <span>Complete</span>
+            </div>
+          )}
         </div>
-        
+
         <ScrollArea className="flex-1">
           <div className="p-3 space-y-1">
             {moduleData.lessons.map((lesson, idx) => {
-              const isCompleted = completedLessonIds.includes(lesson.id);
+              const isDone = completedLessonIds.includes(lesson.id);
               const isActive = activeLessonId === lesson.id;
-              
+              const isAccessible = !moduleData.isLocked || idx === 0;
+
               return (
                 <button
                   key={lesson.id}
                   onClick={() => {
-                    setActiveLessonId(lesson.id);
-                    setSelectedOption("");
-                    setCheckedItems({});
+                    if (isAccessible) {
+                      setActiveLessonId(lesson.id);
+                      setSelectedOption("");
+                      setCheckedItems({});
+                    }
                   }}
+                  disabled={!isAccessible}
                   className={`w-full text-left flex items-start gap-3 px-3 py-3 rounded-lg text-sm transition-colors ${
                     isActive 
                       ? 'bg-primary/10 text-primary-foreground font-medium border border-primary/20' 
-                      : 'hover:bg-muted/50 text-muted-foreground border border-transparent'
+                      : isAccessible
+                        ? 'hover:bg-muted/50 text-muted-foreground border border-transparent'
+                        : 'text-muted-foreground/30 border border-transparent cursor-not-allowed'
                   }`}
                 >
                   <div className="mt-0.5 shrink-0">
-                    {isCompleted ? (
+                    {!isAccessible ? (
+                      <Lock className="h-4 w-4 text-muted-foreground/30" />
+                    ) : isDone ? (
                       <CheckCircle2 className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-primary/60'}`} />
                     ) : (
                       <Circle className={`h-4 w-4 ${isActive ? 'text-primary/50' : 'text-muted-foreground/30'}`} />
@@ -351,6 +384,9 @@ export default function ModulePlayer() {
                     <span className="line-clamp-2 leading-snug">{lesson.title}</span>
                     <span className="text-[10px] uppercase tracking-wider opacity-70 flex items-center gap-1">
                       {renderLessonIcon(lesson.type)} {lesson.type}
+                      {idx === 0 && moduleData.isLocked && (
+                        <span className="ml-1 text-primary/70">· Preview</span>
+                      )}
                     </span>
                   </div>
                 </button>
@@ -358,12 +394,34 @@ export default function ModulePlayer() {
             })}
           </div>
         </ScrollArea>
+
+        {moduleData.isLocked && (
+          <div className="p-4 border-t border-border/40 shrink-0">
+            <Button
+              className="w-full"
+              size="sm"
+              onClick={handleUnlock}
+              disabled={createCheckoutSession.isPending}
+            >
+              {createCheckoutSession.isPending 
+                ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                : <Sparkles className="mr-2 h-4 w-4" />
+              }
+              Unlock — $69
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Main Content Area */}
       <div className="flex-1 relative overflow-hidden flex flex-col bg-background/50">
         <ScrollArea className="flex-1 px-4 md:px-12 py-8">
-          {activeLesson ? renderLessonContent(activeLesson) : null}
+          {isPaywalled 
+            ? renderPaywallGate()
+            : activeLesson 
+              ? renderLessonContent(activeLesson) 
+              : null
+          }
         </ScrollArea>
       </div>
     </div>

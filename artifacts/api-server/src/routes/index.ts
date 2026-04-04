@@ -6,6 +6,7 @@ import quickReferenceRouter from "./quickReference";
 import userRouter from "./user";
 import paymentsRouter from "./payments";
 import statsRouter from "./stats";
+import leadsRouter from "./leads";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(quickReferenceRouter);
 router.use(userRouter);
 router.use(paymentsRouter);
 router.use(statsRouter);
+router.use(leadsRouter);
 
 export default router;
