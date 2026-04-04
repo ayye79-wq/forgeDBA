@@ -80,6 +80,10 @@ router.get("/payments/verify", requireAuth, async (req: any, res): Promise<void>
   const { session_id } = queryParams.data;
 
   if (session_id.startsWith("mock_session_")) {
+    if (process.env.NODE_ENV !== "development") {
+      res.status(400).json({ error: "Invalid session", success: false, isPremium: false, message: "Invalid payment session" });
+      return;
+    }
     await db.insert(usersTable).values({
       userId,
       email: "",
@@ -90,7 +94,7 @@ router.get("/payments/verify", requireAuth, async (req: any, res): Promise<void>
       set: { isPremium: true, premiumSince: new Date() },
     });
 
-    res.json({ success: true, isPremium: true, message: "Access granted. Welcome to DBA Forge." });
+    res.json({ success: true, isPremium: true, message: "Access granted (dev mode). Welcome to DBA Forge." });
     return;
   }
 
