@@ -1,13 +1,13 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { useUser } from "@clerk/react";
 import { useListModules, useGetUserProgress, useCreateCheckoutSession } from "@workspace/api-client-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Clock, Lock, BookOpen, CheckCircle2, ChevronRight, Zap, Star, TrendingUp, Shield, Flame, Sparkles } from "lucide-react";
+import { Clock, Lock, BookOpen, CheckCircle2, ChevronRight, Zap, Star, TrendingUp, Shield, Flame, Sparkles, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
 
 const MODULE_META: Record<string, {
   difficulty: "Beginner" | "Intermediate" | "Advanced";
@@ -48,14 +48,20 @@ const DIFFICULTY_STYLES = {
 };
 
 export default function Modules() {
+  const { isSignedIn, isLoaded: isAuthLoaded } = useUser();
+  const [, setLocation] = useLocation();
   const { data: modules, isLoading: isLoadingModules } = useListModules();
-  const { data: progress, isLoading: isLoadingProgress } = useGetUserProgress();
+  const { data: progress, isLoading: isLoadingProgress } = useGetUserProgress({ query: { enabled: !!isSignedIn } });
   const createCheckoutSession = useCreateCheckoutSession();
   const { toast } = useToast();
 
   const hasLockedModules = modules?.some(m => m.isLocked) ?? false;
 
   const handleUnlock = () => {
+    if (!isSignedIn) {
+      setLocation("/sign-up");
+      return;
+    }
     createCheckoutSession.mutate(undefined, {
       onSuccess: (data) => {
         window.location.href = data.url;
@@ -70,7 +76,19 @@ export default function Modules() {
     });
   };
 
-  if (isLoadingModules || isLoadingProgress) {
+  const handleStartModule = (moduleId: string, isLocked: boolean) => {
+    if (!isSignedIn) {
+      setLocation("/sign-up");
+      return;
+    }
+    if (isLocked) {
+      handleUnlock();
+      return;
+    }
+    setLocation(`/modules/${moduleId}`);
+  };
+
+  if (!isAuthLoaded || isLoadingModules || (isSignedIn && isLoadingProgress)) {
     return (
       <div className="container max-w-screen-xl px-4 py-8 mx-auto space-y-8">
         <div>
@@ -249,12 +267,13 @@ export default function Modules() {
                       Unlock to Continue — $69
                     </Button>
                   ) : (
-                    <Link href={`/modules/${mod.id}`} className="w-full">
-                      <Button className="w-full group">
-                        {isCompleted ? "Review Module" : isStarted ? "Continue Learning" : "Start Module"}
-                        <ChevronRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
-                      </Button>
-                    </Link>
+                    <Button
+                      className="w-full group"
+                      onClick={() => handleStartModule(mod.id, mod.isLocked)}
+                    >
+                      {isCompleted ? "Review Module" : isStarted ? "Continue Learning" : "Start Module"}
+                      <ChevronRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
+                    </Button>
                   )}
                 </CardFooter>
               </Card>

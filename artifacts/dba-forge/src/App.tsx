@@ -127,7 +127,7 @@ function ClerkProviderWithRoutes() {
             <Route path="/" component={HomeRedirect} />
             <Route path="/sign-in/*?" component={SignInPage} />
             <Route path="/sign-up/*?" component={SignUpPage} />
-            <Route path="/modules" component={() => <ProtectedRoute component={Modules} />} />
+            <Route path="/modules" component={() => <Layout><Modules /></Layout>} />
             <Route path="/modules/:moduleId" component={() => <ProtectedRoute component={ModulePlayer} />} />
             <Route path="/quick-reference" component={() => <Layout><QuickReference /></Layout>} />
             <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
