@@ -1,8 +1,20 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
+import modulesRouter from "./modules";
+import progressRouter from "./progress";
+import quickReferenceRouter from "./quickReference";
+import userRouter from "./user";
+import paymentsRouter from "./payments";
+import statsRouter from "./stats";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(modulesRouter);
+router.use(progressRouter);
+router.use(quickReferenceRouter);
+router.use(userRouter);
+router.use(paymentsRouter);
+router.use(statsRouter);
 
 export default router;

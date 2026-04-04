@@ -3,13 +3,23 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: DBA Forge API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: modules
+    description: Training modules and content
+  - name: progress
+    description: User progress tracking
+  - name: quick-reference
+    description: DBA Quick Reference cards
+  - name: user
+    description: User profile and premium status
+  - name: payments
+    description: Stripe payment operations
 paths:
   /healthz:
     get:
@@ -24,6 +34,205 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /modules:
+    get:
+      operationId: listModules
+      tags: [modules]
+      summary: List all training modules
+      description: Returns all modules with metadata and lock status for the current user
+      responses:
+        "200":
+          description: List of modules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ModuleSummary"
+
+  /modules/{moduleId}:
+    get:
+      operationId: getModule
+      tags: [modules]
+      summary: Get a single module with full content
+      parameters:
+        - name: moduleId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Module with full content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModuleDetail"
+        "403":
+          description: Module is locked (requires premium)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Module not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /progress:
+    get:
+      operationId: getUserProgress
+      tags: [progress]
+      summary: Get all progress for the current user
+      responses:
+        "200":
+          description: User progress across all modules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ModuleProgress"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /progress/{moduleId}:
+    post:
+      operationId: updateProgress
+      tags: [progress]
+      summary: Update progress for a module
+      parameters:
+        - name: moduleId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProgressBody"
+      responses:
+        "200":
+          description: Updated progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModuleProgress"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /quick-reference:
+    get:
+      operationId: getQuickReference
+      tags: [quick-reference]
+      summary: Get all DBA Quick Reference cards
+      description: Returns all quick reference sections, publicly accessible without login
+      responses:
+        "200":
+          description: Quick reference sections
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/QuickReferenceSection"
+
+  /user/profile:
+    get:
+      operationId: getUserProfile
+      tags: [user]
+      summary: Get current user profile and premium status
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /payments/create-checkout:
+    post:
+      operationId: createCheckoutSession
+      tags: [payments]
+      summary: Create a Stripe checkout session for full access
+      responses:
+        "200":
+          description: Checkout session URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutSession"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /payments/verify:
+    get:
+      operationId: verifyPayment
+      tags: [payments]
+      summary: Verify a completed payment and upgrade user to premium
+      parameters:
+        - name: session_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Payment verified and user upgraded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentVerification"
+        "400":
+          description: Invalid or unverified session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /stats/overview:
+    get:
+      operationId: getStatsOverview
+      tags: [modules]
+      summary: Get platform stats overview
+      description: Returns overall stats like total users, completions, module count
+      responses:
+        "200":
+          description: Platform stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatsOverview"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +243,246 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    ModuleSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        order:
+          type: integer
+        isFree:
+          type: boolean
+        isLocked:
+          type: boolean
+        lessonCount:
+          type: integer
+        estimatedMinutes:
+          type: integer
+        topics:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - title
+        - description
+        - order
+        - isFree
+        - isLocked
+        - lessonCount
+        - estimatedMinutes
+        - topics
+
+    Lesson:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        type:
+          type: string
+          enum: [scenario, lesson, code, mistakes, simulation, lab, checklist]
+        content:
+          type: string
+        codeExample:
+          type: ["string", "null"]
+        options:
+          type: ["array", "null"]
+          items:
+            type: string
+        correctOption:
+          type: ["integer", "null"]
+        explanation:
+          type: ["string", "null"]
+        checklistItems:
+          type: ["array", "null"]
+          items:
+            type: string
+        order:
+          type: integer
+      required:
+        - id
+        - title
+        - type
+        - content
+        - order
+
+    ModuleDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        order:
+          type: integer
+        isFree:
+          type: boolean
+        isLocked:
+          type: boolean
+        estimatedMinutes:
+          type: integer
+        topics:
+          type: array
+          items:
+            type: string
+        lessons:
+          type: array
+          items:
+            $ref: "#/components/schemas/Lesson"
+      required:
+        - id
+        - title
+        - description
+        - order
+        - isFree
+        - isLocked
+        - estimatedMinutes
+        - topics
+        - lessons
+
+    ModuleProgress:
+      type: object
+      properties:
+        moduleId:
+          type: string
+        completedLessonIds:
+          type: array
+          items:
+            type: string
+        completedAt:
+          type: ["string", "null"]
+        percentComplete:
+          type: integer
+      required:
+        - moduleId
+        - completedLessonIds
+        - percentComplete
+
+    UpdateProgressBody:
+      type: object
+      properties:
+        lessonId:
+          type: string
+        completed:
+          type: boolean
+      required:
+        - lessonId
+        - completed
+
+    QuickReferenceCard:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        syntax:
+          type: string
+        description:
+          type: string
+        example:
+          type: ["string", "null"]
+      required:
+        - id
+        - title
+        - syntax
+        - description
+
+    QuickReferenceSection:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        icon:
+          type: string
+        cards:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuickReferenceCard"
+      required:
+        - id
+        - title
+        - icon
+        - cards
+
+    UserProfile:
+      type: object
+      properties:
+        userId:
+          type: string
+        email:
+          type: string
+        isPremium:
+          type: boolean
+        premiumSince:
+          type: ["string", "null"]
+        modulesCompleted:
+          type: integer
+        totalLessonsCompleted:
+          type: integer
+      required:
+        - userId
+        - email
+        - isPremium
+        - modulesCompleted
+        - totalLessonsCompleted
+
+    CheckoutSession:
+      type: object
+      properties:
+        url:
+          type: string
+        sessionId:
+          type: string
+      required:
+        - url
+        - sessionId
+
+    PaymentVerification:
+      type: object
+      properties:
+        success:
+          type: boolean
+        isPremium:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+        - isPremium
+        - message
+
+    StatsOverview:
+      type: object
+      properties:
+        totalModules:
+          type: integer
+        totalLessons:
+          type: integer
+        premiumUsers:
+          type: integer
+        totalEnrollments:
+          type: integer
+      required:
+        - totalModules
+        - totalLessons
+        - premiumUsers
+        - totalEnrollments

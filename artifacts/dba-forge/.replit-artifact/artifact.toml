@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "DBA Forge"
+version = "1.0.0"
+id = "artifacts/dba-forge"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23188
+
+[services.development]
+run = "pnpm --filter @workspace/dba-forge run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/dba-forge", "run", "build" ]
+publicDir = "artifacts/dba-forge/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23188"
+BASE_PATH = "/"
