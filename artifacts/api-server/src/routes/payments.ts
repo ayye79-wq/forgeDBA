@@ -143,4 +143,38 @@ router.get("/payments/verify", requireAuth, async (req: any, res): Promise<void>
   }
 });
 
+router.post("/payments/apply-promo", requireAuth, async (req: any, res): Promise<void> => {
+  const userId = req.userId as string;
+  const { code } = req.body ?? {};
+
+  const validCode = process.env.PROMO_CODE;
+  if (!validCode) {
+    res.status(503).json({ error: "Promo codes are not configured." });
+    return;
+  }
+
+  if (!code || typeof code !== "string" || code.trim().toUpperCase() !== validCode.toUpperCase()) {
+    res.status(400).json({ error: "Invalid promo code." });
+    return;
+  }
+
+  try {
+    await db.insert(usersTable).values({
+      userId,
+      email: "",
+      isPremium: true,
+      premiumSince: new Date(),
+    }).onConflictDoUpdate({
+      target: usersTable.userId,
+      set: { isPremium: true, premiumSince: new Date() },
+    });
+
+    logger.info({ userId }, "Promo code redeemed — user granted premium access");
+    res.json({ success: true, message: "Code accepted. You now have full access." });
+  } catch (err) {
+    logger.error({ err }, "Failed to apply promo code");
+    res.status(500).json({ error: "Something went wrong. Try again." });
+  }
+});
+
 export default router;

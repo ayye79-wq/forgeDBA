@@ -1,10 +1,13 @@
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useUser } from "@clerk/react";
 import { useListModules, useGetUserProgress, useCreateCheckoutSession } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { getGetUserProgressQueryKey, getListModulesQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Clock, Lock, BookOpen, CheckCircle2, ChevronRight, Zap, Star, TrendingUp, Shield, Flame, Sparkles, Loader2 } from "lucide-react";
+import { Clock, Lock, BookOpen, CheckCircle2, ChevronRight, Zap, Star, TrendingUp, Shield, Flame, Sparkles, Loader2, Tag } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -53,7 +56,40 @@ export default function Modules() {
   const { data: modules, isLoading: isLoadingModules } = useListModules();
   const { data: progress, isLoading: isLoadingProgress } = useGetUserProgress({ query: { enabled: !!isSignedIn } });
   const createCheckoutSession = useCreateCheckoutSession();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  const [showPromo, setShowPromo] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
+  const [promoStatus, setPromoStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [promoError, setPromoError] = useState("");
+
+  const handleApplyPromo = async () => {
+    if (!isSignedIn) { setLocation("/sign-up"); return; }
+    if (!promoCode.trim()) return;
+    setPromoStatus("loading");
+    setPromoError("");
+    try {
+      const res = await fetch("/api/payments/apply-promo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: promoCode.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPromoStatus("success");
+        queryClient.invalidateQueries({ queryKey: getListModulesQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetUserProgressQueryKey() });
+        toast({ title: "Access granted!", description: data.message });
+      } else {
+        setPromoStatus("error");
+        setPromoError(data.error ?? "Invalid code.");
+      }
+    } catch {
+      setPromoStatus("error");
+      setPromoError("Something went wrong. Try again.");
+    }
+  };
 
   const hasLockedModules = modules?.some(m => m.isLocked) ?? false;
 
@@ -309,6 +345,46 @@ export default function Modules() {
                   Unlock Full Course — $69
                 </Button>
                 <p className="text-xs text-muted-foreground">Price increases soon · One-time payment</p>
+              </div>
+
+              {/* Promo code */}
+              <div className="mt-6 pt-6 border-t border-border/30">
+                {!showPromo ? (
+                  <button
+                    onClick={() => setShowPromo(true)}
+                    className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5 mx-auto"
+                  >
+                    <Tag className="h-3.5 w-3.5" />
+                    Have a promo code?
+                  </button>
+                ) : promoStatus === "success" ? (
+                  <p className="text-sm text-green-400 flex items-center justify-center gap-2">
+                    <CheckCircle2 className="h-4 w-4" /> Access granted — refresh to see all modules.
+                  </p>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="flex gap-2 w-full max-w-xs">
+                      <input
+                        type="text"
+                        placeholder="Enter code"
+                        value={promoCode}
+                        onChange={e => setPromoCode(e.target.value)}
+                        onKeyDown={e => e.key === "Enter" && handleApplyPromo()}
+                        className="flex-1 h-9 px-3 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 uppercase"
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleApplyPromo}
+                        disabled={promoStatus === "loading" || !promoCode.trim()}
+                        className="h-9 px-4 shrink-0"
+                      >
+                        {promoStatus === "loading" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Apply"}
+                      </Button>
+                    </div>
+                    {promoError && <p className="text-xs text-destructive">{promoError}</p>}
+                  </div>
+                )}
               </div>
             </div>
           </div>
