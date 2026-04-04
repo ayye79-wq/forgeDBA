@@ -665,9 +665,19 @@ export function getModuleSummaries(isPremium: boolean) {
 export function getModuleDetail(moduleId: string, isPremium: boolean) {
   const m = modules.find(mod => mod.id === moduleId);
   if (!m) return null;
+  const isLocked = !m.isFree && !isPremium;
+  const sortedLessons = m.lessons.sort((a, b) => a.order - b.order);
   return {
     ...m,
-    isLocked: !m.isFree && !isPremium,
-    lessons: m.lessons.sort((a, b) => a.order - b.order),
+    isLocked,
+    lessons: isLocked
+      ? sortedLessons.map(l => ({
+          id: l.id,
+          title: l.title,
+          type: l.type,
+          order: l.order,
+          content: "",
+        }))
+      : sortedLessons,
   };
 }
