@@ -45,11 +45,6 @@ router.get("/modules/:moduleId", async (req, res): Promise<void> => {
     return;
   }
 
-  if (module.isLocked) {
-    res.status(403).json({ error: "This module requires a premium subscription" });
-    return;
-  }
-
   res.json(module);
 });
 
