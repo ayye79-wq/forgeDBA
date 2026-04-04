@@ -5,7 +5,8 @@ import {
   useGetUserProgress, 
   useUpdateProgress, 
   useCreateCheckoutSession,
-  Lesson
+  getGetModuleQueryKey,
+  getGetUserProgressQueryKey
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -14,9 +15,22 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Lock, CheckCircle2, Circle, ChevronLeft, ChevronRight, Play, Terminal, AlertTriangle, AlertCircle, FileCheck2, Loader2, Sparkles } from "lucide-react";
+import { Lock, CheckCircle2, Circle, ChevronLeft, ChevronRight, Play, Terminal, AlertTriangle, AlertCircle, FileCheck2, Loader2, Sparkles, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
+
+type Lesson = {
+  id: string;
+  title: string;
+  type: string;
+  content: string;
+  codeExample?: string;
+  options?: string[];
+  correctOption?: number;
+  explanation?: string;
+  checklistItems?: string[];
+  order: number;
+};
 
 export default function ModulePlayer() {
   const { moduleId } = useParams();
@@ -26,7 +40,7 @@ export default function ModulePlayer() {
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
 
   const { data: moduleData, isLoading: isLoadingModule } = useGetModule(moduleId || "", { 
-    query: { enabled: !!moduleId } 
+    query: { enabled: !!moduleId, queryKey: getGetModuleQueryKey(moduleId || "") } 
   });
   const { data: progress, isLoading: isLoadingProgress } = useGetUserProgress();
   const updateProgress = useUpdateProgress();
@@ -72,7 +86,7 @@ export default function ModulePlayer() {
       data: { lessonId: activeLessonId, completed: true }
     }, {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['/api/progress'] });
+        queryClient.invalidateQueries({ queryKey: getGetUserProgressQueryKey() });
         toast({
           title: "Lesson completed!",
           description: "Great job. Keep the momentum going.",
