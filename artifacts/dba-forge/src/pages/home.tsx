@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
-  Database, Terminal, ShieldAlert, Cpu, ChevronRight, CheckCircle2,
-  Quote, Loader2, Sparkles, Star, Zap, Users, Clock, Lock,
-  TrendingUp, Wrench, AlertCircle, BarChart2
+  Terminal, ShieldAlert, Cpu, ChevronRight, CheckCircle2,
+  Quote, Loader2, Sparkles, Star, Zap, Users, Lock,
+  TrendingUp, Wrench, AlertCircle, BarChart2,
+  XCircle, FlaskConical, ShieldCheck, Clock3
 } from "lucide-react";
 
 const TESTIMONIALS = [
@@ -96,15 +97,14 @@ export default function Home() {
             </div>
 
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-foreground leading-tight">
-              Forge yourself into a{" "}
+              Stop guessing in production.{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-orange-400">
-                production-ready DBA
+                Become a real DBA.
               </span>
             </h1>
 
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl">
-              Zero to job-ready. <strong className="text-foreground">No theory. Real DBA work.</strong>{" "}
-              Learn to manage SQL Server through scenarios that feel like the real thing — not slides.
+              From zero to job-ready — <strong className="text-foreground">without wasting years</strong> on tutorials that never prepare you for what actually happens in production.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
@@ -184,9 +184,16 @@ export default function Home() {
                   </Link>
                 </div>
 
-                <div className="mt-4 flex items-center justify-center gap-2 text-xs text-amber-400/80 font-medium">
-                  <Zap className="h-3 w-3 fill-amber-400/60" />
-                  Price will increase to $149 when early access ends
+                <div className="mt-4 space-y-2">
+                  <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-green-500" /> Secure checkout</span>
+                    <span className="flex items-center gap-1.5"><Zap className="h-3.5 w-3.5 text-primary" /> Instant access</span>
+                    <span className="flex items-center gap-1.5"><Clock3 className="h-3.5 w-3.5 text-blue-400" /> 7-day refund</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2 text-xs text-amber-400/80 font-medium">
+                    <Zap className="h-3 w-3 fill-amber-400/60" />
+                    Price will increase to $149 when early access ends
+                  </div>
                 </div>
               </div>
             </div>
@@ -216,6 +223,92 @@ export default function Home() {
                 <Users className="h-6 w-6" />247
               </span>
               <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Founding Members</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Why most people fail ─────────────────────────────── */}
+      <section className="py-20 md:py-28 bg-card border-b border-border/40">
+        <div className="container max-w-screen-xl px-4 md:px-8 mx-auto">
+          <div className="max-w-3xl mx-auto">
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 rounded-full bg-destructive/10 px-3 py-1 text-xs font-semibold text-red-400 border border-red-500/20 mb-4">
+                <AlertCircle className="h-3.5 w-3.5" /> Sound familiar?
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">Why most people never become real DBAs</h2>
+              <p className="text-muted-foreground text-lg">
+                It's not lack of effort. It's the wrong approach.
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4 mb-10">
+              {[
+                "You watch videos — but nothing sticks without doing",
+                "You read docs — but never face a real scenario under pressure",
+                "You study theory — but panic when something breaks in prod",
+                "You practice on toy databases — not real SQL Server environments",
+              ].map((fail, i) => (
+                <div key={i} className="flex items-start gap-3 bg-background rounded-xl border border-red-500/15 p-4">
+                  <XCircle className="h-5 w-5 text-red-400/70 shrink-0 mt-0.5" />
+                  <p className="text-sm text-muted-foreground">{fail}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="rounded-2xl border border-primary/30 bg-primary/5 p-8 text-center">
+              <p className="text-xl font-bold text-foreground mb-2">DBA Forge fixes that.</p>
+              <p className="text-muted-foreground max-w-lg mx-auto">
+                Every lesson is built around a crisis you have to solve. You don't study backups — you restore a database that just got deleted. That's how real skill is built.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Real Incident Simulations (unfair advantage) ──────── */}
+      <section className="py-20 md:py-28 bg-background border-b border-border/40 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/10 via-background to-background pointer-events-none" />
+        <div className="container max-w-screen-xl px-4 md:px-8 mx-auto relative z-10">
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-semibold text-primary border border-primary/20 mb-6">
+              <FlaskConical className="h-4 w-4" /> Our Unfair Advantage
+            </div>
+            <h2 className="text-4xl md:text-5xl font-extrabold mb-6">
+              Real Incident{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-orange-400">
+                Simulations
+              </span>
+            </h2>
+            <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
+              Other courses teach you concepts. DBA Forge puts you in the hot seat — a production server is down, the CEO is calling, and you have to fix it. Right now.
+            </p>
+
+            <div className="grid sm:grid-cols-3 gap-4 text-left mb-10">
+              {[
+                {
+                  title: "You get the scenario",
+                  desc: "A realistic production crisis lands in your lap. A developer deleted a table. The log file filled the disk. Replication broke.",
+                },
+                {
+                  title: "You work through it",
+                  desc: "Step-by-step, you learn the fix — but in context. Not a quiz. A real decision tree that forces you to think.",
+                },
+                {
+                  title: "You own it cold",
+                  desc: "When it happens for real, you don't Google it in a panic. You've already been there. You know exactly what to do.",
+                },
+              ].map((step, i) => (
+                <div key={i} className="bg-card rounded-xl border border-border/50 p-6 hover:border-primary/30 transition-colors">
+                  <div className="text-3xl font-black text-primary/20 mb-3">0{i + 1}</div>
+                  <h3 className="font-bold text-foreground mb-2">{step.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{step.desc}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="inline-block rounded-2xl border border-amber-500/20 bg-amber-500/5 px-6 py-4 text-sm text-amber-400/90 font-medium">
+              💬 "I failed the first simulation three times. Then I understood it cold." — Priya K., DBA
             </div>
           </div>
         </div>
@@ -344,9 +437,12 @@ export default function Home() {
 
             <div>
               <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to become a real DBA?</h2>
-              <p className="text-xl text-muted-foreground">
+              <p className="text-xl text-muted-foreground mb-6">
                 Start free with Module 1 — or unlock everything now before the price goes up.
               </p>
+              <div className="inline-block rounded-xl border border-red-500/20 bg-red-500/5 px-6 py-4 text-sm text-red-400/90 max-w-lg mx-auto">
+                Without real-world practice, you'll still hesitate when a production server fails at 2AM — and everyone will know it.
+              </div>
             </div>
 
             {/* Dual CTA */}
