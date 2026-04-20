@@ -93,7 +93,7 @@ export default function Home() {
 
             <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-sm font-semibold text-amber-400">
               <Zap className="h-3.5 w-3.5 fill-amber-400" />
-              Early Access — $69 (price goes up soon)
+              SQL Server DBA Training — Early Access $69
             </div>
 
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-foreground leading-tight">
@@ -104,7 +104,7 @@ export default function Home() {
             </h1>
 
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl">
-              From zero to job-ready — <strong className="text-foreground">without wasting years</strong> on tutorials that never prepare you for what actually happens in production.
+              The hands-on <strong className="text-foreground">SQL Server</strong> training that prepares you for real production work — not slides, not theory, not YouTube tutorials.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
