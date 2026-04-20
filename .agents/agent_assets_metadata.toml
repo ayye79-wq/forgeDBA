@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "uTe5vUjq-P7eZE1NzC6JG"
+uri = "file://sticker.png"
+type = "image"
+title = "Sticker — Curious what your driver is building? (PNG)"
