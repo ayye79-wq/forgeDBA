@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
   Terminal, ShieldAlert, Cpu, ChevronRight, CheckCircle2,
   Quote, Loader2, Sparkles, Star, Zap, Users, Lock,
   TrendingUp, Wrench, AlertCircle, BarChart2,
-  XCircle, FlaskConical, ShieldCheck, Clock3
+  XCircle, FlaskConical, ShieldCheck, Clock3, HelpCircle, ChevronDown
 } from "lucide-react";
+import { ExitIntentPopup } from "@/components/exit-intent-popup";
 
 const TESTIMONIALS = [
   {
@@ -62,9 +63,64 @@ const WHO_ITS_FOR = [
   },
 ];
 
+const FAQ = [
+  {
+    q: "Is this for complete beginners?",
+    a: "Yes. Module 1 starts from zero — what SQL Server is, how it works, what a DBA actually does. If you can use a computer and have basic curiosity, you can start here.",
+  },
+  {
+    q: "What version of SQL Server does this cover?",
+    a: "The core skills — backups, recovery, performance tuning, security, SQL Agent — apply to SQL Server 2016 through 2022. The concepts are stable; the syntax barely changes between versions.",
+  },
+  {
+    q: "Do I need SQL Server installed on my machine?",
+    a: "No. All labs are walkthrough-style with real T-SQL you can study and copy. If you want to practice hands-on, SQL Server Developer Edition is free from Microsoft.",
+  },
+  {
+    q: "How long does the full course take?",
+    a: "Most people finish the full curriculum in 4–8 hours spread over 2–3 weeks. Module 1 is 45 minutes. You go at your own pace — there's no deadline.",
+  },
+  {
+    q: "What happens after I pay?",
+    a: "Instant access. You're taken directly to the training. No waiting, no email confirmation required. Your account is upgraded immediately.",
+  },
+  {
+    q: "Is there a refund policy?",
+    a: "Yes — 7-day no-questions-asked refund. If you're not satisfied for any reason, email us and you'll get a full refund.",
+  },
+  {
+    q: "Will I get access to future modules?",
+    a: "Yes. The $69 price includes all future modules. When new content is added, you get it automatically at no extra cost.",
+  },
+];
+
+const EARLY_ACCESS_END = new Date("2026-05-31T23:59:59");
+
+function useCountdown(target: Date) {
+  const [timeLeft, setTimeLeft] = useState(() => getTimeLeft(target));
+  useEffect(() => {
+    const id = setInterval(() => setTimeLeft(getTimeLeft(target)), 1000);
+    return () => clearInterval(id);
+  }, [target]);
+  return timeLeft;
+}
+
+function getTimeLeft(target: Date) {
+  const diff = target.getTime() - Date.now();
+  if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+  return {
+    days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+    hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+    minutes: Math.floor((diff / (1000 * 60)) % 60),
+    seconds: Math.floor((diff / 1000) % 60),
+  };
+}
+
 export default function Home() {
   const [email, setEmail] = useState("");
   const [leadStatus, setLeadStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const countdown = useCountdown(EARLY_ACCESS_END);
 
   const handleLeadCapture = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -184,15 +240,33 @@ export default function Home() {
                   </Link>
                 </div>
 
-                <div className="mt-4 space-y-2">
+                <div className="mt-4 space-y-3">
                   <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-green-500" /> Secure checkout</span>
                     <span className="flex items-center gap-1.5"><Zap className="h-3.5 w-3.5 text-primary" /> Instant access</span>
                     <span className="flex items-center gap-1.5"><Clock3 className="h-3.5 w-3.5 text-blue-400" /> 7-day refund</span>
                   </div>
-                  <div className="flex items-center justify-center gap-2 text-xs text-amber-400/80 font-medium">
-                    <Zap className="h-3 w-3 fill-amber-400/60" />
-                    Price will increase to $149 when early access ends
+                  {/* Countdown Timer */}
+                  <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+                    <p className="text-xs text-amber-400/80 font-semibold text-center mb-2 uppercase tracking-wider">
+                      Early access ends in
+                    </p>
+                    <div className="flex items-center justify-center gap-3">
+                      {[
+                        { value: countdown.days, label: "Days" },
+                        { value: countdown.hours, label: "Hrs" },
+                        { value: countdown.minutes, label: "Min" },
+                        { value: countdown.seconds, label: "Sec" },
+                      ].map((unit, i) => (
+                        <div key={i} className="flex flex-col items-center">
+                          <span className="text-2xl font-black text-amber-400 tabular-nums w-10 text-center">
+                            {String(unit.value).padStart(2, "0")}
+                          </span>
+                          <span className="text-xs text-amber-400/60 font-medium">{unit.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-amber-400/60 text-center mt-2">After May 31 — price increases to $149</p>
                   </div>
                 </div>
               </div>
@@ -429,6 +503,39 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── FAQ ──────────────────────────────────────────────── */}
+      <section className="py-20 md:py-28 bg-card border-b border-border/40">
+        <div className="container max-w-screen-xl px-4 md:px-8 mx-auto">
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary border border-primary/20 mb-4">
+                <HelpCircle className="h-3.5 w-3.5" /> Common Questions
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">Frequently asked</h2>
+              <p className="text-muted-foreground text-lg">The questions everyone asks before they start.</p>
+            </div>
+            <div className="space-y-3">
+              {FAQ.map((item, i) => (
+                <div key={i} className="bg-background border border-border/50 rounded-xl overflow-hidden hover:border-primary/20 transition-colors">
+                  <button
+                    className="w-full flex items-center justify-between px-6 py-4 text-left group"
+                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  >
+                    <span className="font-semibold text-foreground text-sm pr-4 group-hover:text-primary transition-colors">{item.q}</span>
+                    <ChevronDown className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform duration-200 ${openFaq === i ? "rotate-180" : ""}`} />
+                  </button>
+                  {openFaq === i && (
+                    <div className="px-6 pb-5">
+                      <p className="text-muted-foreground text-sm leading-relaxed">{item.a}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── Bottom CTA — dual path ───────────────────────────── */}
       <section className="py-20 md:py-28 bg-card border-t border-border/40 relative overflow-hidden">
         <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/3 w-96 h-96 bg-primary/20 rounded-full blur-[100px] pointer-events-none" />
@@ -495,6 +602,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      <ExitIntentPopup />
     </div>
   );
 }

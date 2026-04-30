@@ -15,6 +15,9 @@ import ModulePlayer from "@/pages/module-player";
 import QuickReference from "@/pages/quick-reference";
 import Settings from "@/pages/settings";
 import PaymentSuccess from "@/pages/payment-success";
+import Certificate from "@/pages/certificate";
+import Blog from "@/pages/blog";
+import BlogPost from "@/pages/blog-post";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
@@ -132,6 +135,9 @@ function ClerkProviderWithRoutes() {
             <Route path="/quick-reference" component={() => <Layout><QuickReference /></Layout>} />
             <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
             <Route path="/payment-success" component={() => <ProtectedRoute component={PaymentSuccess} />} />
+            <Route path="/certificate" component={() => <ProtectedRoute component={Certificate} />} />
+            <Route path="/blog/:slug" component={() => <Layout><BlogPost /></Layout>} />
+            <Route path="/blog" component={() => <Layout><Blog /></Layout>} />
             <Route component={() => <Layout><NotFound /></Layout>} />
           </Switch>
           <Toaster />

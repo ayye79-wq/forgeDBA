@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Database, HardDrive, Shield, Activity, Terminal } from "lucide-react";
+import { Search, Database, HardDrive, Shield, Activity, Terminal, Printer } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function QuickReference() {
@@ -48,14 +48,24 @@ export default function QuickReference() {
             No login required.
           </p>
         </div>
-        <div className="relative w-full md:w-96 shrink-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search syntax, commands, topics..." 
-            className="pl-10 h-12 bg-card border-border/50 focus-visible:border-primary"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+        <div className="flex gap-3 w-full md:w-auto shrink-0">
+          <div className="relative flex-1 md:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search syntax, commands, topics..." 
+              className="pl-10 h-12 bg-card border-border/50 focus-visible:border-primary"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <Button
+            variant="outline"
+            className="h-12 px-4 border-border/50 shrink-0 gap-2"
+            onClick={() => window.print()}
+          >
+            <Printer className="h-4 w-4" />
+            <span className="hidden sm:inline">PDF</span>
+          </Button>
         </div>
       </div>
 

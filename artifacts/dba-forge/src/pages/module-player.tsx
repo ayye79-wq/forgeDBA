@@ -15,7 +15,8 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Lock, CheckCircle2, Circle, ChevronLeft, ChevronRight, Play, Terminal, AlertTriangle, AlertCircle, FileCheck2, Loader2, Sparkles, BookOpen } from "lucide-react";
+import { Lock, CheckCircle2, Circle, ChevronLeft, ChevronRight, Play, Terminal, AlertTriangle, AlertCircle, FileCheck2, Loader2, Sparkles, BookOpen, Menu } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 
@@ -38,6 +39,7 @@ export default function ModulePlayer() {
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
   const [selectedOption, setSelectedOption] = useState<string>("");
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   const { data: moduleData, isLoading: isLoadingModule } = useGetModule(moduleId || "", { 
     query: { enabled: !!moduleId, queryKey: getGetModuleQueryKey(moduleId || "") } 
@@ -415,6 +417,104 @@ export default function ModulePlayer() {
 
       {/* Main Content Area */}
       <div className="flex-1 relative overflow-hidden flex flex-col bg-background/50">
+
+        {/* Mobile header bar */}
+        <div className="flex md:hidden items-center gap-3 px-4 py-3 border-b border-border/40 shrink-0">
+          <Sheet open={mobileDrawerOpen} onOpenChange={setMobileDrawerOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="shrink-0">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-80 p-0 flex flex-col">
+              <SheetHeader className="p-4 border-b border-border/40">
+                <Link href="/modules" onClick={() => setMobileDrawerOpen(false)}>
+                  <Button variant="ghost" size="sm" className="-ml-2 text-muted-foreground">
+                    <ChevronLeft className="mr-1 h-4 w-4" /> All Modules
+                  </Button>
+                </Link>
+                <SheetTitle className="text-left text-base leading-snug">{moduleData.title}</SheetTitle>
+                {moduleData.isLocked && (
+                  <div className="flex items-center gap-1.5 text-xs text-primary font-medium">
+                    <Lock className="h-3 w-3" />
+                    <span>Free preview — Lesson 1 only</span>
+                  </div>
+                )}
+                {!moduleData.isLocked && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
+                    <span className="text-primary">{Math.round((completedLessonIds.length / moduleData.lessons.length) * 100)}%</span>
+                    <span>Complete</span>
+                  </div>
+                )}
+              </SheetHeader>
+              <ScrollArea className="flex-1">
+                <div className="p-3 space-y-1">
+                  {moduleData.lessons.map((lesson, idx) => {
+                    const isDone = completedLessonIds.includes(lesson.id);
+                    const isActive = activeLessonId === lesson.id;
+                    const isAccessible = !moduleData.isLocked || idx === 0;
+                    return (
+                      <button
+                        key={lesson.id}
+                        onClick={() => {
+                          if (isAccessible) {
+                            setActiveLessonId(lesson.id);
+                            setSelectedOption("");
+                            setCheckedItems({});
+                            setMobileDrawerOpen(false);
+                          }
+                        }}
+                        disabled={!isAccessible}
+                        className={`w-full text-left flex items-start gap-3 px-3 py-3 rounded-lg text-sm transition-colors ${
+                          isActive
+                            ? 'bg-primary/10 text-primary-foreground font-medium border border-primary/20'
+                            : isAccessible
+                              ? 'hover:bg-muted/50 text-muted-foreground border border-transparent'
+                              : 'text-muted-foreground/30 border border-transparent cursor-not-allowed'
+                        }`}
+                      >
+                        <div className="mt-0.5 shrink-0">
+                          {!isAccessible ? (
+                            <Lock className="h-4 w-4 text-muted-foreground/30" />
+                          ) : isDone ? (
+                            <CheckCircle2 className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-primary/60'}`} />
+                          ) : (
+                            <Circle className={`h-4 w-4 ${isActive ? 'text-primary/50' : 'text-muted-foreground/30'}`} />
+                          )}
+                        </div>
+                        <div className="flex flex-col flex-1 gap-1">
+                          <span className="line-clamp-2 leading-snug">{lesson.title}</span>
+                          <span className="text-[10px] uppercase tracking-wider opacity-70 flex items-center gap-1">
+                            {renderLessonIcon(lesson.type)} {lesson.type}
+                            {idx === 0 && moduleData.isLocked && (
+                              <span className="ml-1 text-primary/70">· Preview</span>
+                            )}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+              {moduleData.isLocked && (
+                <div className="p-4 border-t border-border/40">
+                  <Button className="w-full" size="sm" onClick={() => { handleUnlock(); setMobileDrawerOpen(false); }} disabled={createCheckoutSession.isPending}>
+                    {createCheckoutSession.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                    Unlock — $69
+                  </Button>
+                </div>
+              )}
+            </SheetContent>
+          </Sheet>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-muted-foreground truncate">{moduleData.title}</p>
+            <p className="text-sm font-medium truncate">{activeLesson?.title ?? "Loading..."}</p>
+          </div>
+          {activeLessonIndex >= 0 && (
+            <span className="text-xs text-muted-foreground shrink-0">{activeLessonIndex + 1} / {moduleData.lessons.length}</span>
+          )}
+        </div>
+
         <ScrollArea className="flex-1 px-4 md:px-12 py-8">
           {isPaywalled 
             ? renderPaywallGate()

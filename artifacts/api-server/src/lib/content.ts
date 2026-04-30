@@ -119,6 +119,46 @@ WHERE is_user_process = 1;`,
           "Explain what tempdb is and why it resets on restart"
         ],
         order: 7,
+      },
+      {
+        id: "fund-code-2",
+        title: "SQL Server Configuration Manager Essentials",
+        type: "code",
+        content: "SQL Server Configuration Manager controls services and network protocols. DBAs use it when a service won't start, to change ports, or to enable remote connections. Here are the T-SQL equivalents for common configuration tasks.",
+        codeExample: `-- Check which SQL Server services are running (from T-SQL)
+SELECT servicename, status_desc, startup_type_desc, service_account
+FROM sys.dm_server_services;
+
+-- Check current server-level configuration settings
+SELECT name, value, value_in_use, description
+FROM sys.configurations
+ORDER BY name;
+
+-- Enable remote connections (run in SSMS, also requires firewall port 1433 open)
+EXEC sys.sp_configure 'show advanced options', 1;
+RECONFIGURE;
+
+EXEC sys.sp_configure 'remote access', 1;
+RECONFIGURE;
+
+-- Check the maximum server memory setting
+SELECT name, value_in_use
+FROM sys.configurations
+WHERE name = 'max server memory (MB)';
+
+-- Set max server memory (leave ~10% or 4GB for OS)
+-- Example: 24GB server → set SQL Server max to 20480 MB
+EXEC sys.sp_configure 'max server memory (MB)', 20480;
+RECONFIGURE WITH OVERRIDE;
+
+-- Check what port SQL Server is listening on
+SELECT local_net_address, local_tcp_port, auth_scheme
+FROM sys.dm_exec_connections
+WHERE session_id = @@SPID;
+
+-- Find the SQL Server error log location
+EXEC sys.xp_readerrorlog 0, 1, N'Logging SQL Server messages', NULL, NULL, N'asc';`,
+        order: 8,
       }
     ]
   },
@@ -247,6 +287,55 @@ WITH RECOVERY,
           "Verify a backup file is restorable using RESTORE VERIFYONLY"
         ],
         order: 7,
+      },
+      {
+        id: "backup-code-2",
+        title: "Auditing Backup History with T-SQL",
+        type: "code",
+        content: "SQL Server stores all backup history in msdb. These queries let you answer 'when was the last backup?' in seconds — a question you will be asked during every incident.",
+        codeExample: `-- Last successful backup for every user database
+SELECT 
+    d.name AS DatabaseName,
+    MAX(b.backup_finish_date) AS LastBackupDate,
+    DATEDIFF(HOUR, MAX(b.backup_finish_date), GETDATE()) AS HoursAgo,
+    b.type AS BackupType
+FROM sys.databases d
+LEFT JOIN msdb.dbo.backupset b ON d.name = b.database_name
+WHERE d.database_id > 4  -- exclude system databases
+GROUP BY d.name, b.type
+ORDER BY d.name, b.type;
+
+-- Detailed backup history for a specific database (last 7 days)
+SELECT TOP 50
+    database_name,
+    backup_start_date,
+    backup_finish_date,
+    CASE type
+        WHEN 'D' THEN 'Full'
+        WHEN 'I' THEN 'Differential'
+        WHEN 'L' THEN 'Log'
+    END AS BackupType,
+    CAST(backup_size / 1048576.0 AS DECIMAL(10,2)) AS SizeMB,
+    CAST(compressed_backup_size / 1048576.0 AS DECIMAL(10,2)) AS CompressedMB,
+    physical_device_name
+FROM msdb.dbo.backupset bs
+JOIN msdb.dbo.backupmediafamily bmf ON bs.media_set_id = bmf.media_set_id
+WHERE database_name = 'YourDatabase'
+  AND backup_start_date > DATEADD(DAY, -7, GETDATE())
+ORDER BY backup_start_date DESC;
+
+-- Find databases with NO backup in the last 24 hours (run in monitoring)
+SELECT d.name AS DatabaseName, 'NO BACKUP IN 24 HOURS' AS Alert
+FROM sys.databases d
+WHERE d.database_id > 4
+  AND d.state_desc = 'ONLINE'
+  AND NOT EXISTS (
+    SELECT 1 FROM msdb.dbo.backupset b
+    WHERE b.database_name = d.name
+      AND b.type = 'D'
+      AND b.backup_finish_date > DATEADD(HOUR, -24, GETDATE())
+  );`,
+        order: 8,
       }
     ]
   },
@@ -358,6 +447,48 @@ BACKUP DATABASE [YourDatabase] TO DISK = 'C:\\Backups\\YourDatabase_Full.bak';`,
           "Explain what happens to log backups if you switch from SIMPLE to FULL without taking a full backup"
         ],
         order: 7,
+      },
+      {
+        id: "recovery-code-2",
+        title: "Monitoring Transaction Log Health",
+        type: "code",
+        content: "These queries give you a real-time picture of log file usage, Virtual Log Files (VLFs), and what is preventing log truncation — essential for preventing 'log is full' emergencies before they happen.",
+        codeExample: `-- Check log file usage for all databases right now
+SELECT 
+    d.name AS DatabaseName,
+    d.recovery_model_desc AS RecoveryModel,
+    df.name AS LogFileName,
+    df.size * 8 / 1024 AS LogSizeMB,
+    FILEPROPERTY(df.name, 'SpaceUsed') * 8 / 1024 AS UsedMB,
+    100 - CAST(FILEPROPERTY(df.name, 'SpaceUsed') AS FLOAT) / df.size * 100 AS FreePercent,
+    d.log_reuse_wait_desc AS WhyLogCantTruncate
+FROM sys.databases d
+JOIN sys.master_files df ON d.database_id = df.database_id
+WHERE df.type_desc = 'LOG'
+ORDER BY LogSizeMB DESC;
+
+-- Check VLF count for a database (high VLF count slows recovery and log reads)
+-- Run this in context of each database
+DBCC LOGINFO;
+-- VLFs > 1000 is a red flag. A healthy log has < 100 VLFs.
+
+-- How to fix VLF fragmentation (only do during maintenance window):
+-- 1. Shrink log to near-zero (temporarily)
+DBCC SHRINKFILE (YourDatabase_log, 1);
+-- 2. Grow log back to target size in ONE step (avoids many small autogrowth VLFs)
+ALTER DATABASE [YourDatabase]
+    MODIFY FILE (NAME = YourDatabase_log, SIZE = 4096MB);
+
+-- Monitor log backup frequency: are log backups keeping up with log growth?
+SELECT TOP 20
+    database_name,
+    backup_finish_date,
+    CAST(backup_size / 1048576.0 AS DECIMAL(10,2)) AS SizeMB
+FROM msdb.dbo.backupset
+WHERE type = 'L'
+  AND database_name = 'YourDatabase'
+ORDER BY backup_finish_date DESC;`,
+        order: 8,
       }
     ]
   },
@@ -492,6 +623,59 @@ DROP LOGIN AppUser;`,
           "Explain the principle of least privilege and why sa should be disabled"
         ],
         order: 7,
+      },
+      {
+        id: "security-code-2",
+        title: "Permission Audit: Who Can Do What?",
+        type: "code",
+        content: "A DBA is regularly asked 'does user X have access to Y?' and 'who has access to this database?' These queries answer those questions fast, without guessing.",
+        codeExample: `-- Full permission audit: all permissions for all users in current database
+SELECT 
+    dp.name AS PrincipalName,
+    dp.type_desc AS PrincipalType,
+    p.state_desc AS PermissionState,
+    p.permission_name AS Permission,
+    COALESCE(o.name, 'DATABASE') AS ObjectName,
+    COALESCE(o.type_desc, '') AS ObjectType
+FROM sys.database_permissions p
+JOIN sys.database_principals dp ON p.grantee_principal_id = dp.principal_id
+LEFT JOIN sys.objects o ON p.major_id = o.object_id
+WHERE dp.type NOT IN ('R')  -- exclude roles, show only users
+ORDER BY dp.name, o.name;
+
+-- Who is a member of the sysadmin role? (run in master)
+SELECT sp.name AS LoginName, sp.type_desc, sp.is_disabled
+FROM sys.server_principals sp
+JOIN sys.server_role_members srm ON sp.principal_id = srm.member_principal_id
+JOIN sys.server_principals r ON srm.role_principal_id = r.principal_id
+WHERE r.name = 'sysadmin'
+ORDER BY sp.name;
+
+-- Who can access a specific database?
+SELECT dp.name AS UserName, dp.type_desc, 
+       dp.default_schema_name,
+       dp.create_date
+FROM sys.database_principals dp
+WHERE dp.type IN ('S','U','G')  -- SQL, Windows, Group logins
+  AND dp.name NOT IN ('dbo','guest','INFORMATION_SCHEMA','sys')
+ORDER BY dp.name;
+
+-- Check if a specific login exists and what databases they can access
+SELECT 
+    sp.name AS LoginName,
+    sp.is_disabled,
+    sp.type_desc,
+    dp.name AS DatabaseUser,
+    d.name AS DatabaseName
+FROM sys.server_principals sp
+JOIN sys.databases d ON 1=1
+LEFT JOIN sys.database_principals dp ON dp.sid = sp.sid
+WHERE sp.name = 'AppUser'  -- replace with login name
+ORDER BY d.name;
+
+-- Orphaned users (user exists in database but login was deleted)
+EXEC sp_change_users_login 'Report';`,
+        order: 8,
       }
     ]
   },
@@ -643,6 +827,62 @@ ORDER BY j.name;`,
           "Explain why jobs should be staggered rather than all run at the same time"
         ],
         order: 7,
+      },
+      {
+        id: "agent-code-2",
+        title: "Database Mail: Email Alerts That Actually Work",
+        type: "code",
+        content: "Database Mail is SQL Server's built-in email system. Set it up once and every job failure, alert, and notification flows to your inbox automatically. Here is the complete setup.",
+        codeExample: `-- Step 1: Enable Database Mail (if not already enabled)
+EXEC sp_configure 'show advanced options', 1;
+RECONFIGURE;
+EXEC sp_configure 'Database Mail XPs', 1;
+RECONFIGURE;
+
+-- Step 2: Create a Database Mail account
+EXEC msdb.dbo.sysmail_add_account_sp
+    @account_name = 'DBA Alerts Account',
+    @description = 'SQL Server DBA Alert Account',
+    @email_address = 'dba-alerts@yourcompany.com',
+    @display_name = 'SQL Server DBA Alerts',
+    @mailserver_name = 'smtp.yourcompany.com',
+    @port = 25,
+    @enable_ssl = 0;
+    -- For Office 365: @port = 587, @enable_ssl = 1, @username, @password
+
+-- Step 3: Create a Database Mail profile and associate the account
+EXEC msdb.dbo.sysmail_add_profile_sp
+    @profile_name = 'DBA Alert Profile',
+    @description = 'Profile for DBA job alerts';
+
+EXEC msdb.dbo.sysmail_add_profileaccount_sp
+    @profile_name = 'DBA Alert Profile',
+    @account_name = 'DBA Alerts Account',
+    @sequence_number = 1;
+
+-- Step 4: Make profile the default
+EXEC msdb.dbo.sysmail_add_principalprofile_sp
+    @profile_name = 'DBA Alert Profile',
+    @principal_name = 'public',
+    @is_default = 1;
+
+-- Step 5: Send a test email
+EXEC msdb.dbo.sp_send_dbmail
+    @profile_name = 'DBA Alert Profile',
+    @recipients = 'you@yourcompany.com',
+    @subject = 'Database Mail Test',
+    @body = 'Database Mail is configured and working.';
+
+-- Check Database Mail queue and sent items
+SELECT TOP 10 * FROM msdb.dbo.sysmail_sentitems ORDER BY sent_date DESC;
+SELECT TOP 10 * FROM msdb.dbo.sysmail_faileditems ORDER BY last_mod_date DESC;
+
+-- Create an operator (recipient for job failure alerts)
+EXEC msdb.dbo.sp_add_operator
+    @name = N'DBA Team',
+    @enabled = 1,
+    @email_address = N'dba@yourcompany.com';`,
+        order: 8,
       }
     ]
   }

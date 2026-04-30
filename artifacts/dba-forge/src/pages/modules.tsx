@@ -7,7 +7,7 @@ import { getGetUserProgressQueryKey, getListModulesQueryKey } from "@workspace/a
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Clock, Lock, BookOpen, CheckCircle2, ChevronRight, Zap, Star, TrendingUp, Shield, Flame, Sparkles, Loader2, Tag } from "lucide-react";
+import { Clock, Lock, BookOpen, CheckCircle2, ChevronRight, Zap, Star, TrendingUp, Shield, Flame, Sparkles, Loader2, Tag, Award, BarChart2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -189,6 +189,53 @@ export default function Modules() {
             Every module starts with a real production crisis. You learn by solving it — not by reading slides.
           </p>
         </div>
+
+        {/* Progress Dashboard */}
+        {isSignedIn && progress && progress.length > 0 && (
+          <div className="mb-8 bg-card border border-border/50 rounded-xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BarChart2 className="h-4 w-4 text-primary" />
+                <span className="font-semibold text-sm text-foreground">Your Progress</span>
+              </div>
+              <Link href="/certificate">
+                <button className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors font-medium">
+                  <Award className="h-3.5 w-3.5" />
+                  View Certificate
+                </button>
+              </Link>
+            </div>
+            {(() => {
+              const totalModules = modules?.length ?? 5;
+              const completedModules = progress.filter(p => p.percentComplete === 100).length;
+              const totalLessons = modules?.reduce((sum, m) => sum + m.lessonCount, 0) ?? 35;
+              const completedLessons = progress.reduce((sum, p) => sum + (p.completedLessonIds?.length ?? 0), 0);
+              const overallPct = Math.round((completedLessons / totalLessons) * 100);
+              return (
+                <>
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <p className="text-2xl font-black text-foreground">{completedModules}<span className="text-muted-foreground text-base font-medium">/{totalModules}</span></p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Modules done</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-black text-foreground">{completedLessons}<span className="text-muted-foreground text-base font-medium">/{totalLessons}</span></p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Lessons done</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-black text-primary">{overallPct}%</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Complete</p>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Progress value={overallPct} className="h-2" />
+                    <p className="text-xs text-muted-foreground text-right">{overallPct}% of the full curriculum</p>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        )}
 
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {modules?.sort((a, b) => a.order - b.order).map((mod) => {

@@ -15,11 +15,18 @@ SQL Server DBA training platform for aspiring and junior DBAs. Freemium model �
 ## Features
 
 - 5 training modules: Fundamentals (free), Backups, Recovery Models, Security, SQL Agent
-- Each module has 7 lessons: Scenario → Lesson → Code → Mistakes → Simulation → Lab → Checklist
+- Each module has 8 lessons: Scenario → Lesson → Code → Mistakes → Simulation → Lab → Checklist → Deep Dive Code
 - Free DBA Quick Reference section (6 categories, 24 cards) — no login required
 - Progress tracking per user/module/lesson in PostgreSQL
 - Clerk authentication (sign in / sign up)
 - Stripe payment checkout ($69 one-time unlock) — graceful degradation without Stripe key
+- Exit-intent email capture popup (captures leads to /api/leads)
+- Blog / SEO pages at /blog and /blog/:slug (4 articles)
+- Certificate of completion page at /certificate (auth-protected)
+- Progress dashboard on modules page with completion stats
+- Quick Reference PDF print button
+- Mobile-responsive module player with slide-out lesson drawer
+- Homepage FAQ section + May 2026 early-access countdown timer
 
 ## Environment Variables
 
@@ -50,10 +57,13 @@ All routes under `/api`:
 
 ## Frontend Pages
 
-- `/` — Landing page (public, redirects to /modules if signed in)
-- `/modules` — Module library with progress/lock status (auth required)
-- `/modules/:moduleId` — Lesson player with sidebar and content area (auth required)
-- `/quick-reference` — Searchable quick reference (public)
+- `/` — Landing page with FAQ, countdown timer, exit-intent popup (public)
+- `/modules` — Module library with progress dashboard (auth required)
+- `/modules/:moduleId` — Lesson player; mobile slide-out drawer for lesson nav (auth required)
+- `/quick-reference` — Searchable quick reference with PDF print button (public)
+- `/blog` — SEO blog index (public)
+- `/blog/:slug` — Individual blog posts (4 articles, public)
+- `/certificate` — Completion certificate with LinkedIn share + print (auth required)
 - `/settings` — User profile and premium status (auth required)
 - `/payment-success` — Payment verification and redirect (auth required)
 - `/sign-in` — Clerk sign in
