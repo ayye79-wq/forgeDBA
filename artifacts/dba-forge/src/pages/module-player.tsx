@@ -370,7 +370,7 @@ export default function ModulePlayer() {
         </div>
 
         <ScrollArea className="flex-1">
-          <div className="p-3 space-y-1">
+          <div className="p-3 pb-6 space-y-1">
             {moduleData.lessons.map((lesson, idx) => {
               const isDone = completedLessonIds.includes(lesson.id);
               const isActive = activeLessonId === lesson.id;
@@ -470,7 +470,7 @@ export default function ModulePlayer() {
                 )}
               </SheetHeader>
               <ScrollArea className="flex-1">
-                <div className="p-3 space-y-1">
+                <div className="p-3 pb-6 space-y-1">
                   {moduleData.lessons.map((lesson, idx) => {
                     const isDone = completedLessonIds.includes(lesson.id);
                     const isActive = activeLessonId === lesson.id;
