@@ -51,6 +51,12 @@ export default function ModulePlayer() {
   const moduleProgress = progress?.find(p => p.moduleId === moduleId);
   const completedLessonIds = moduleProgress?.completedLessonIds || [];
 
+  // Derived state — must be declared before the useEffects that reference them
+  const activeLesson = moduleData?.lessons.find(l => l.id === activeLessonId);
+  const activeLessonIndex = moduleData?.lessons.findIndex(l => l.id === activeLessonId) ?? -1;
+  const isLastLesson = activeLessonIndex === (moduleData?.lessons.length ?? 0) - 1;
+  const isCompleted = activeLessonId ? completedLessonIds.includes(activeLessonId) : false;
+
   useEffect(() => {
     if (moduleData?.lessons && !activeLessonId) {
       const firstIncomplete = moduleData.lessons.find(l => !completedLessonIds.includes(l.id));
@@ -78,11 +84,6 @@ export default function ModulePlayer() {
       handleMarkComplete();
     }
   }, [checkedItems]);
-
-  const activeLesson = moduleData?.lessons.find(l => l.id === activeLessonId);
-  const activeLessonIndex = moduleData?.lessons.findIndex(l => l.id === activeLessonId) ?? -1;
-  const isLastLesson = activeLessonIndex === (moduleData?.lessons.length ?? 0) - 1;
-  const isCompleted = activeLessonId ? completedLessonIds.includes(activeLessonId) : false;
 
   const handleUnlock = () => {
     createCheckoutSession.mutate(undefined, {

@@ -21,17 +21,29 @@ function requireAuth(req: any, res: any, next: any) {
 router.get("/progress", requireAuth, async (req: any, res): Promise<void> => {
   const userId = req.userId as string;
 
-  const rows = await db
-    .select()
-    .from(moduleProgressTable)
-    .where(eq(moduleProgressTable.userId, userId));
+  const [rows, userRows] = await Promise.all([
+    db.select().from(moduleProgressTable).where(eq(moduleProgressTable.userId, userId)),
+    db.select().from(usersTable).where(eq(usersTable.userId, userId)),
+  ]);
 
-  const result = rows.map(r => ({
-    moduleId: r.moduleId,
-    completedLessonIds: r.completedLessonIds ?? [],
-    percentComplete: r.percentComplete,
-    completedAt: r.completedAt?.toISOString() ?? null,
-  }));
+  const isPremium = userRows[0]?.isPremium ?? false;
+
+  // Recalculate percentComplete live so stale DB values never mislead the UI
+  const result = rows.map(r => {
+    const completedLessonIds = r.completedLessonIds ?? [];
+    const moduleDetail = getModuleDetail(r.moduleId, isPremium);
+    const totalLessons = moduleDetail?.lessons.length ?? 0;
+    const percentComplete = totalLessons > 0
+      ? Math.round((completedLessonIds.length / totalLessons) * 100)
+      : r.percentComplete;
+    const isComplete = percentComplete === 100;
+    return {
+      moduleId: r.moduleId,
+      completedLessonIds,
+      percentComplete,
+      completedAt: isComplete ? (r.completedAt?.toISOString() ?? null) : null,
+    };
+  });
 
   res.json(result);
 });
