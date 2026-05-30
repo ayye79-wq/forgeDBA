@@ -58,6 +58,27 @@ export default function ModulePlayer() {
     }
   }, [moduleData, completedLessonIds, activeLessonId]);
 
+  // Auto-restore checked state when landing on an already-completed checklist lesson
+  useEffect(() => {
+    if (!activeLesson || activeLesson.type !== 'checklist') return;
+    if (isCompleted && activeLesson.checklistItems) {
+      const all: Record<string, boolean> = {};
+      activeLesson.checklistItems.forEach((_, i) => { all[i] = true; });
+      setCheckedItems(all);
+    }
+  }, [activeLessonId, isCompleted]);
+
+  // Auto-complete checklist lesson the moment the last item is ticked
+  useEffect(() => {
+    if (!activeLesson || activeLesson.type !== 'checklist') return;
+    if (!activeLesson.checklistItems || isCompleted || updateProgress.isPending) return;
+    const total = activeLesson.checklistItems.length;
+    const checked = Object.values(checkedItems).filter(Boolean).length;
+    if (checked === total && total > 0) {
+      handleMarkComplete();
+    }
+  }, [checkedItems]);
+
   const activeLesson = moduleData?.lessons.find(l => l.id === activeLessonId);
   const activeLessonIndex = moduleData?.lessons.findIndex(l => l.id === activeLessonId) ?? -1;
   const isLastLesson = activeLessonIndex === (moduleData?.lessons.length ?? 0) - 1;
