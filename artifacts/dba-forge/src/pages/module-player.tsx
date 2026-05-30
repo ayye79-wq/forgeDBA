@@ -389,19 +389,19 @@ export default function ModulePlayer() {
                   disabled={!isAccessible}
                   className={`w-full text-left flex items-start gap-3 px-3 py-3 rounded-lg text-sm transition-colors ${
                     isActive 
-                      ? 'bg-primary/10 text-primary-foreground font-medium border border-primary/20' 
+                      ? 'bg-primary/15 text-foreground font-semibold ring-1 ring-primary/50' 
                       : isAccessible
-                        ? 'hover:bg-muted/50 text-muted-foreground border border-transparent'
-                        : 'text-muted-foreground/30 border border-transparent cursor-not-allowed'
+                        ? 'hover:bg-muted/50 text-muted-foreground'
+                        : 'text-muted-foreground/30 cursor-not-allowed'
                   }`}
                 >
                   <div className="mt-0.5 shrink-0">
                     {!isAccessible ? (
                       <Lock className="h-4 w-4 text-muted-foreground/30" />
                     ) : isDone ? (
-                      <CheckCircle2 className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-primary/60'}`} />
+                      <CheckCircle2 className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-green-500'}`} />
                     ) : (
-                      <Circle className={`h-4 w-4 ${isActive ? 'text-primary/50' : 'text-muted-foreground/30'}`} />
+                      <Circle className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-muted-foreground/40'}`} />
                     )}
                   </div>
                   <div className="flex flex-col flex-1 gap-1">
@@ -489,19 +489,19 @@ export default function ModulePlayer() {
                         disabled={!isAccessible}
                         className={`w-full text-left flex items-start gap-3 px-3 py-3 rounded-lg text-sm transition-colors ${
                           isActive
-                            ? 'bg-primary/10 text-primary-foreground font-medium border border-primary/20'
+                            ? 'bg-primary/15 text-foreground font-semibold ring-1 ring-primary/50'
                             : isAccessible
-                              ? 'hover:bg-muted/50 text-muted-foreground border border-transparent'
-                              : 'text-muted-foreground/30 border border-transparent cursor-not-allowed'
+                              ? 'hover:bg-muted/50 text-muted-foreground'
+                              : 'text-muted-foreground/30 cursor-not-allowed'
                         }`}
                       >
                         <div className="mt-0.5 shrink-0">
                           {!isAccessible ? (
                             <Lock className="h-4 w-4 text-muted-foreground/30" />
                           ) : isDone ? (
-                            <CheckCircle2 className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-primary/60'}`} />
+                            <CheckCircle2 className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-green-500'}`} />
                           ) : (
-                            <Circle className={`h-4 w-4 ${isActive ? 'text-primary/50' : 'text-muted-foreground/30'}`} />
+                            <Circle className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-muted-foreground/40'}`} />
                           )}
                         </div>
                         <div className="flex flex-col flex-1 gap-1">
