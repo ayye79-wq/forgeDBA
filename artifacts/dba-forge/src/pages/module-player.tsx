@@ -634,7 +634,7 @@ export default function ModulePlayer() {
           )}
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 md:px-12 py-8 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/40">
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 md:px-12 py-8 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/40">
           {isPaywalled 
             ? renderPaywallGate()
             : activeLesson 
