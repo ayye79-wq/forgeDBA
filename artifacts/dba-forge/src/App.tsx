@@ -55,16 +55,9 @@ function SignUpPage() {
 
 function HomeRedirect() {
   return (
-    <>
-      <Show when="signed-in">
-        <Redirect to="/modules" />
-      </Show>
-      <Show when="signed-out">
-        <Layout>
-          <Home />
-        </Layout>
-      </Show>
-    </>
+    <Layout>
+      <Home />
+    </Layout>
   );
 }
 
