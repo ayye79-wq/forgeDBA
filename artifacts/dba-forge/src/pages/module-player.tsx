@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
@@ -635,14 +634,14 @@ export default function ModulePlayer() {
           )}
         </div>
 
-        <ScrollArea className="flex-1 px-4 md:px-12 py-8">
+        <div className="flex-1 overflow-y-auto px-4 md:px-12 py-8 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/40">
           {isPaywalled 
             ? renderPaywallGate()
             : activeLesson 
               ? renderLessonContent(activeLesson) 
               : null
           }
-        </ScrollArea>
+        </div>
       </div>
     </div>
   );
