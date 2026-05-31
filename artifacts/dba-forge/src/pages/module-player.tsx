@@ -535,7 +535,7 @@ export default function ModulePlayer() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 relative overflow-hidden flex flex-col bg-background/50">
+      <div className="flex-1 min-h-0 flex flex-col bg-background/50">
 
         {/* Mobile header bar */}
         <div className="flex md:hidden items-center gap-3 px-4 py-3 border-b border-border/40 shrink-0">
@@ -634,13 +634,15 @@ export default function ModulePlayer() {
           )}
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto px-4 md:px-12 py-8 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/40">
-          {isPaywalled 
-            ? renderPaywallGate()
-            : activeLesson 
-              ? renderLessonContent(activeLesson) 
-              : null
-          }
+        <div className="flex-1 relative min-h-0">
+          <div className="absolute inset-0 overflow-y-auto px-4 md:px-12 py-8 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/40">
+            {isPaywalled 
+              ? renderPaywallGate()
+              : activeLesson 
+                ? renderLessonContent(activeLesson) 
+                : null
+            }
+          </div>
         </div>
       </div>
     </div>
