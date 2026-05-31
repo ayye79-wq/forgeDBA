@@ -1,0 +1,1 @@
+- [Module player scroll layout](module-player-scroll.md) — sticky sidebar + natural page scroll; inner-scroll flex tricks don't work reliably in production
