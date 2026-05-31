@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "wouter";
 import { 
   useGetModule, 
@@ -15,7 +15,8 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Lock, CheckCircle2, Circle, ChevronLeft, ChevronRight, Play, Terminal, AlertTriangle, AlertCircle, FileCheck2, Loader2, Sparkles, BookOpen, Menu } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Lock, CheckCircle2, Circle, ChevronLeft, ChevronRight, Play, Terminal, AlertTriangle, AlertCircle, FileCheck2, Loader2, Sparkles, BookOpen, Menu, Bot, Send, ChevronDown, ChevronUp } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
@@ -25,11 +26,11 @@ type Lesson = {
   title: string;
   type: string;
   content: string;
-  codeExample?: string;
-  options?: string[];
-  correctOption?: number;
-  explanation?: string;
-  checklistItems?: string[];
+  codeExample?: string | null;
+  options?: string[] | null;
+  correctOption?: number | null;
+  explanation?: string | null;
+  checklistItems?: string[] | null;
   order: number;
 };
 
@@ -40,6 +41,11 @@ export default function ModulePlayer() {
   const [selectedOption, setSelectedOption] = useState<string>("");
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiQuestion, setAiQuestion] = useState("");
+  const [aiAnswer, setAiAnswer] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const aiAnswerRef = useRef<HTMLDivElement>(null);
 
   const { data: moduleData, isLoading: isLoadingModule } = useGetModule(moduleId || "", { 
     query: { enabled: !!moduleId, queryKey: getGetModuleQueryKey(moduleId || "") } 
@@ -85,6 +91,14 @@ export default function ModulePlayer() {
     }
   }, [checkedItems]);
 
+  // Reset AI panel state when navigating to a new lesson
+  useEffect(() => {
+    setAiQuestion("");
+    setAiAnswer("");
+    setAiLoading(false);
+    setAiOpen(false);
+  }, [activeLessonId]);
+
   const handleUnlock = () => {
     createCheckoutSession.mutate(undefined, {
       onSuccess: (data) => {
@@ -98,6 +112,44 @@ export default function ModulePlayer() {
         });
       }
     });
+  };
+
+  const askAI = async () => {
+    if (!aiQuestion.trim() || aiLoading) return;
+    setAiLoading(true);
+    setAiAnswer("");
+    let accumulated = "";
+    try {
+      const resp = await fetch("/api/ai/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: aiQuestion, moduleId, lessonId: activeLessonId }),
+      });
+      if (!resp.ok || !resp.body) throw new Error("Request failed");
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const text = decoder.decode(value);
+        for (const line of text.split("\n")) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            const json = JSON.parse(line.slice(6));
+            if (json.content) {
+              accumulated += json.content;
+              setAiAnswer(accumulated);
+              if (aiAnswerRef.current) aiAnswerRef.current.scrollTop = aiAnswerRef.current.scrollHeight;
+            }
+            if (json.error) setAiAnswer(json.error);
+          } catch {}
+        }
+      }
+    } catch {
+      setAiAnswer("Something went wrong. Please try again.");
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const handleMarkComplete = () => {
@@ -325,7 +377,7 @@ export default function ModulePlayer() {
               disabled={
                 updateProgress.isPending || 
                 (lesson.type === 'simulation' && selectedOption === "") ||
-                (lesson.type === 'checklist' && lesson.checklistItems && Object.keys(checkedItems).filter(k => checkedItems[k]).length !== lesson.checklistItems.length)
+                (lesson.type === 'checklist' && !!lesson.checklistItems && Object.keys(checkedItems).filter(k => checkedItems[k]).length !== lesson.checklistItems.length)
               }
               onClick={handleMarkComplete}
             >
@@ -340,6 +392,52 @@ export default function ModulePlayer() {
             </Button>
           </div>
         )}
+
+        {/* AI Q&A Panel */}
+        <div className="mt-10 rounded-xl border border-primary/20 bg-card overflow-hidden">
+          <button
+            className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-muted/30 transition-colors"
+            onClick={() => setAiOpen(v => !v)}
+          >
+            <div className="flex items-center gap-2 font-semibold text-sm text-foreground">
+              <Bot className="h-4 w-4 text-primary" />
+              Ask the AI Tutor
+              <span className="text-xs font-normal text-muted-foreground ml-1">— get instant answers about this lesson</span>
+            </div>
+            {aiOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+          </button>
+          {aiOpen && (
+            <div className="border-t border-border/40 p-5 space-y-4">
+              <div className="flex gap-3">
+                <Textarea
+                  placeholder="Ask anything about this lesson… e.g. 'What is a transaction log and why does it grow?'"
+                  value={aiQuestion}
+                  onChange={e => setAiQuestion(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); askAI(); } }}
+                  rows={2}
+                  className="resize-none text-sm flex-1"
+                  disabled={aiLoading}
+                />
+                <Button
+                  size="sm"
+                  className="self-end shrink-0 px-4"
+                  onClick={askAI}
+                  disabled={aiLoading || !aiQuestion.trim()}
+                >
+                  {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </Button>
+              </div>
+              {(aiAnswer || aiLoading) && (
+                <div
+                  ref={aiAnswerRef}
+                  className="max-h-72 overflow-y-auto rounded-lg bg-muted/30 border border-border/40 p-4 text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap"
+                >
+                  {aiAnswer || <span className="text-muted-foreground animate-pulse">Thinking…</span>}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     );
   };
@@ -369,7 +467,7 @@ export default function ModulePlayer() {
           )}
         </div>
 
-        <ScrollArea className="flex-1">
+        <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/40">
           <div className="p-3 pb-6 space-y-1">
             {moduleData.lessons.map((lesson, idx) => {
               const isDone = completedLessonIds.includes(lesson.id);
@@ -417,7 +515,7 @@ export default function ModulePlayer() {
               );
             })}
           </div>
-        </ScrollArea>
+        </div>
 
         {moduleData.isLocked && (
           <div className="p-4 border-t border-border/40 shrink-0">
@@ -469,7 +567,7 @@ export default function ModulePlayer() {
                   </div>
                 )}
               </SheetHeader>
-              <ScrollArea className="flex-1">
+              <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/40">
                 <div className="p-3 pb-6 space-y-1">
                   {moduleData.lessons.map((lesson, idx) => {
                     const isDone = completedLessonIds.includes(lesson.id);
@@ -517,7 +615,7 @@ export default function ModulePlayer() {
                     );
                   })}
                 </div>
-              </ScrollArea>
+              </div>
               {moduleData.isLocked && (
                 <div className="p-4 border-t border-border/40">
                   <Button className="w-full" size="sm" onClick={() => { handleUnlock(); setMobileDrawerOpen(false); }} disabled={createCheckoutSession.isPending}>
