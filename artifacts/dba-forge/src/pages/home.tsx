@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useUser } from "@clerk/react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
@@ -117,6 +118,7 @@ function getTimeLeft(target: Date) {
 }
 
 export default function Home() {
+  const { isSignedIn } = useUser();
   const [email, setEmail] = useState("");
   const [leadStatus, setLeadStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -164,7 +166,7 @@ export default function Home() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-              <Link href="/sign-up">
+              <Link href={isSignedIn ? "/modules" : "/sign-up"}>
                 <Button size="lg" className="w-full sm:w-auto h-14 px-8 text-base font-bold shadow-lg shadow-primary/20">
                   Start Training Now
                   <ChevronRight className="ml-2 h-5 w-5" />
