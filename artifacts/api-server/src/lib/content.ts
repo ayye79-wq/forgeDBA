@@ -205,10 +205,13 @@ WITH DIFFERENTIAL,
      COMPRESSION,
      STATS = 10;
 
--- Transaction log backup
+-- Transaction log backup (use a variable -- TO DISK does not accept expressions directly)
+DECLARE @LogFile varchar(300);
+SET @LogFile = 'C:\\Backups\\YourDatabase_Log_' +
+               CONVERT(varchar(8), GETDATE(), 112) + '.trn';
+
 BACKUP LOG [YourDatabase]
-TO DISK = 'C:\\Backups\\YourDatabase_Log_' + 
-          CONVERT(varchar, GETDATE(), 112) + '.bak'
+TO DISK = @LogFile
 WITH INIT, COMPRESSION;
 
 -- Restore: Full only (with RECOVERY = make database accessible)
@@ -392,7 +395,7 @@ WHERE name = 'YourDatabase';
 -- Shrink log file AFTER taking a log backup
 -- (Only do this if you have a log backup - never as first step)
 USE [YourDatabase];
-BACKUP LOG [YourDatabase] TO DISK = 'C:\\Backups\\YourDatabase_log.bak';
+BACKUP LOG [YourDatabase] TO DISK = 'C:\\Backups\\YourDatabase_log.trn';
 DBCC SHRINKFILE (YourDatabase_log, 1);  -- Shrink to 1MB minimum
 
 -- Switch to SIMPLE temporarily to allow shrink (emergency only)
