@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { Show, useClerk, useUser } from "@clerk/react";
 import { Button } from "@/components/ui/button";
-import { Database, BookOpen, Settings, LogOut, Menu, Newspaper } from "lucide-react";
+import { Database, BookOpen, Settings, LogOut, Menu, Newspaper, ClipboardList } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
 import { useGetUserProfile } from "@workspace/api-client-react";
@@ -16,6 +16,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { href: "/modules", label: "Training Modules", icon: Database },
     { href: "/quick-reference", label: "Quick Reference", icon: BookOpen },
+    { href: "/practice-test", label: "Practice Test", icon: ClipboardList },
     { href: "/blog", label: "Guides", icon: Newspaper },
   ];
 

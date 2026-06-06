@@ -8,6 +8,7 @@ import paymentsRouter from "./payments";
 import statsRouter from "./stats";
 import leadsRouter from "./leads";
 import askRouter from "./ask";
+import practiceTestRouter from "./practiceTest";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(paymentsRouter);
 router.use(statsRouter);
 router.use(leadsRouter);
 router.use(askRouter);
+router.use(practiceTestRouter);
 
 export default router;
