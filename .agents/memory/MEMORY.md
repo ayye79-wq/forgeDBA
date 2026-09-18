@@ -1,1 +1,2 @@
 - [Module player scroll layout](module-player-scroll.md) — sticky sidebar + natural page scroll; inner-scroll flex tricks don't work reliably in production
+- [GitHub connector pushes](github-connector-pushes.md) — if git CLI auth is not injected, use the standard GitHub connector API to mirror git objects
