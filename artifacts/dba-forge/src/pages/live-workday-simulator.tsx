@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import {
   Activity,
   AlertTriangle,
+  BookOpen,
   CheckCircle2,
   Clock3,
   Database,
@@ -1343,12 +1344,21 @@ export default function LiveWorkdaySimulator() {
           Training rule: diagnose → stabilize → validate → document. The
           simulator blocks real infrastructure access.
         </p>
-        <Link
-          href="/workday-simulator"
-          className="font-semibold text-primary hover:underline"
-        >
-          Open Guided Scenarios
-        </Link>
+        <div className="flex flex-wrap items-center gap-4">
+          <Link
+            href="/modules/daily-operations"
+            className="flex items-center font-semibold text-primary hover:underline"
+          >
+            <BookOpen className="mr-1.5 h-3.5 w-3.5" /> Study Daily DBA
+            Operations
+          </Link>
+          <Link
+            href="/workday-simulator"
+            className="font-semibold text-primary hover:underline"
+          >
+            Open Guided Scenarios
+          </Link>
+        </div>
       </div>
     </div>
   );
