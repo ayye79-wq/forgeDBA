@@ -236,7 +236,7 @@ export default function ModulePlayer() {
             }
             Unlock Full Course — $69
           </Button>
-          <p className="text-xs text-muted-foreground">One-time payment · All 5 modules · No subscription</p>
+          <p className="text-xs text-muted-foreground">One-time payment · All modules · No subscription</p>
           <div className="mt-8 pt-6 border-t border-border/40 w-full text-left">
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-3 text-center">What's inside this module</p>
             <ul className="space-y-2 text-sm text-muted-foreground">
@@ -353,7 +353,7 @@ export default function ModulePlayer() {
               }
               Unlock Full Course — $69
             </Button>
-            <p className="text-xs text-muted-foreground">One-time payment · All 5 modules · No subscription</p>
+            <p className="text-xs text-muted-foreground">One-time payment · All modules · No subscription</p>
           </div>
         ) : (
           <div className="flex items-center justify-between">
@@ -389,6 +389,24 @@ export default function ModulePlayer() {
                 ? (isLastLesson ? "Module Completed" : "Continue to Next") 
                 : "Mark Complete"}
             </Button>
+          </div>
+        )}
+
+        {moduleId === "daily-operations" && isLastLesson && isCompleted && (
+          <div className="mt-6 rounded-xl border border-primary/30 bg-primary/5 p-5">
+            <h3 className="font-semibold">Training complete—now apply it</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Start with coached decisions, then enter the live operations
+              cockpit without multiple-choice answers.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link href="/workday-simulator">
+                <Button variant="outline">Open Guided Scenarios</Button>
+              </Link>
+              <Link href="/workday-simulator/live">
+                <Button>Launch Live Shift</Button>
+              </Link>
+            </div>
           </div>
         )}
 

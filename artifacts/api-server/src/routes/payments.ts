@@ -44,7 +44,7 @@ router.post("/payments/create-checkout", requireAuth, async (req: any, res): Pro
             unit_amount: 6900,
             product_data: {
               name: "DBA Forge — Full Course Access",
-              description: "Lifetime access to all 5 modules, labs, simulations, and future content",
+              description: "Lifetime access to every module, lab, simulation, and future content",
             },
           },
           quantity: 1,

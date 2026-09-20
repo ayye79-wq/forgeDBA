@@ -107,7 +107,7 @@ export default function PaymentSuccess() {
             Welcome to the forge.
           </h1>
           <p className="text-lg text-muted-foreground mb-2">
-            You now have <strong className="text-foreground">lifetime access</strong> to all 5 modules, every lab, every simulation, and everything we add in the future.
+            You now have <strong className="text-foreground">lifetime access</strong> to every module, lab, simulation, and everything we add in the future.
           </p>
           <p className="text-sm text-muted-foreground">A receipt has been sent to your email.</p>
         </div>

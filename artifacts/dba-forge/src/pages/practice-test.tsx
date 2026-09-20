@@ -335,7 +335,7 @@ export default function PracticeTest() {
           DBA Interview Practice Test
         </h1>
         <p className="text-muted-foreground mb-8 leading-relaxed">
-          40 multiple-choice questions covering all 5 training modules. You have{" "}
+          40 multiple-choice questions covering the five foundational modules. You have{" "}
           <span className="text-foreground font-medium">60 minutes</span> — the same
           pressure as a real interview. Your score and a full answer review are shown at the end.
         </p>

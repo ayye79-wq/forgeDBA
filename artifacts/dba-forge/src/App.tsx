@@ -19,6 +19,8 @@ import Certificate from "@/pages/certificate";
 import Blog from "@/pages/blog";
 import BlogPost from "@/pages/blog-post";
 import PracticeTest from "@/pages/practice-test";
+import WorkdaySimulator from "@/pages/workday-simulator";
+import LiveWorkdaySimulator from "@/pages/live-workday-simulator";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
@@ -131,6 +133,8 @@ function ClerkProviderWithRoutes() {
             <Route path="/payment-success" component={() => <ProtectedRoute component={PaymentSuccess} />} />
             <Route path="/certificate" component={() => <ProtectedRoute component={Certificate} />} />
             <Route path="/practice-test" component={() => <ProtectedRoute component={PracticeTest} />} />
+            <Route path="/workday-simulator/live" component={() => <ProtectedRoute component={LiveWorkdaySimulator} />} />
+            <Route path="/workday-simulator" component={() => <ProtectedRoute component={WorkdaySimulator} />} />
             <Route path="/blog/:slug" component={() => <Layout><BlogPost /></Layout>} />
             <Route path="/blog" component={() => <Layout><Blog /></Layout>} />
             <Route component={() => <Layout><NotFound /></Layout>} />

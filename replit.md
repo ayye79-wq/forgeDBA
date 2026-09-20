@@ -14,7 +14,7 @@ SQL Server DBA training platform for aspiring and junior DBAs. Freemium model �
 
 ## Features
 
-- 5 training modules: Fundamentals (free), Backups, Recovery Models, Security, SQL Agent
+- 6 training modules: Fundamentals (free), Backups, Recovery Models, Security, SQL Agent, Daily DBA Operations
 - Each module has 8 lessons: Scenario → Lesson → Code → Mistakes → Simulation → Lab → Checklist → Deep Dive Code
 - Free DBA Quick Reference section (6 categories, 24 cards) — no login required
 - Progress tracking per user/module/lesson in PostgreSQL
