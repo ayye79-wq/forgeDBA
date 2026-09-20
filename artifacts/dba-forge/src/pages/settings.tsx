@@ -122,7 +122,7 @@ export default function Settings() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <ul className="space-y-3">
-                  {['Full access to all 5 training modules', 'Interactive disaster recovery simulations', 'Production-grade code examples', 'Priority email support'].map((feature, i) => (
+                  {['Full access to every training module', 'Interactive disaster recovery simulations', 'Production-grade code examples', 'Priority email support'].map((feature, i) => (
                     <li key={i} className="flex items-start">
                       <CheckCircle2 className="h-5 w-5 mr-3 text-primary shrink-0" />
                       <span className="text-sm font-medium">{feature}</span>
