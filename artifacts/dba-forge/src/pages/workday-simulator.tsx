@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -544,18 +545,25 @@ export default function WorkdaySimulator() {
               variant="outline"
               className="border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
             >
-              Systems online
+              Guided scenarios
             </Badge>
             <Badge variant="outline">Normal Monday · Day shift</Badge>
           </div>
           <h1 className="text-3xl font-black tracking-tight md:text-4xl">
-            Production SQL Server operations
+            SQL Server decision practice
           </h1>
           <p className="mt-2 max-w-3xl text-muted-foreground">
-            Work a realistic 06:00–14:00 DBA shift. Use evidence, follow change
-            control, protect recoverability, and leave a handoff another DBA can
-            trust.
+            Practice the major decisions from a 06:00–14:00 DBA shift with
+            immediate coaching, then enter Live Shift when you are ready to
+            operate without multiple-choice answers.
           </p>
+          <div className="mt-4">
+            <Link href="/workday-simulator/live">
+              <Button className="bg-primary font-semibold text-primary-foreground hover:bg-primary/90">
+                <TerminalSquare className="mr-2 h-4 w-4" /> Launch live shift
+              </Button>
+            </Link>
+          </div>
         </div>
         <div className="min-w-64 rounded-xl border border-border bg-card p-4">
           <div className="mb-2 flex items-center justify-between text-sm">
