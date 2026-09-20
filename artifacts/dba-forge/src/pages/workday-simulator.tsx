@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
   AlertTriangle,
+  BookOpen,
   CheckCircle2,
   ChevronRight,
   ClipboardCheck,
@@ -557,7 +558,12 @@ export default function WorkdaySimulator() {
             immediate coaching, then enter Live Shift when you are ready to
             operate without multiple-choice answers.
           </p>
-          <div className="mt-4">
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link href="/modules/daily-operations">
+              <Button variant="outline">
+                <BookOpen className="mr-2 h-4 w-4" /> Study Daily DBA Operations
+              </Button>
+            </Link>
             <Link href="/workday-simulator/live">
               <Button className="bg-primary font-semibold text-primary-foreground hover:bg-primary/90">
                 <TerminalSquare className="mr-2 h-4 w-4" /> Launch live shift
