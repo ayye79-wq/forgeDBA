@@ -42,6 +42,11 @@ const MODULE_META: Record<string, {
     scenario: "Your primary SQL Server just crashed. You have 30 seconds to failover.",
     icon: <Zap className="h-5 w-5 text-primary" />,
   },
+  "daily-operations": {
+    difficulty: "Intermediate",
+    scenario: "It is 6:00 AM. Take the handoff, control the queue, and run the production day shift.",
+    icon: <BarChart2 className="h-5 w-5 text-primary" />,
+  },
 };
 
 const DIFFICULTY_STYLES = {
@@ -157,7 +162,7 @@ export default function Modules() {
             <div className="flex items-center gap-3 min-w-0">
               <Sparkles className="h-4 w-4 text-primary shrink-0" />
               <span className="text-sm font-medium truncate">
-                Unlock all 5 modules, labs &amp; simulations —{" "}
+                Unlock all modules, labs &amp; simulations —{" "}
                 <span className="text-primary font-bold">$69 lifetime access</span>
               </span>
               <Badge variant="outline" className="text-xs border-primary/40 text-primary shrink-0 hidden sm:flex">
@@ -374,7 +379,7 @@ export default function Modules() {
               </div>
               <h2 className="text-2xl font-bold mb-2">One payment. Lifetime access.</h2>
               <p className="text-muted-foreground mb-6">
-                Get all 5 modules, every lab, every simulation, and all future content — forever.
+                Get every module, lab, simulation, and all future content — forever.
                 No subscriptions. No monthly fees.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
