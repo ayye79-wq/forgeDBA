@@ -890,6 +890,269 @@ EXEC msdb.dbo.sp_add_operator
         order: 8,
       }
     ]
+  },
+  {
+    id: "daily-operations",
+    title: "Daily DBA Operations",
+    description: "Learn the actual rhythm of a production SQL Server day shift: handoff, monitoring, incident triage, access requests, change control, capacity planning, and evidence-based handoff.",
+    order: 6,
+    isFree: false,
+    estimatedMinutes: 150,
+    topics: [
+      "Shift handoff and ticket triage",
+      "Morning health checks",
+      "Always On monitoring",
+      "Backup failure investigation",
+      "SQL Agent dependencies",
+      "Blocking and session termination",
+      "Production access requests",
+      "Change implementation",
+      "Capacity forecasting",
+      "Operational documentation"
+    ],
+    lessons: [
+      {
+        id: "daily-ops-scenario",
+        title: "Your First Production Day Shift",
+        type: "scenario",
+        content: "It is 6:00 AM. The night DBA hands you a failed transaction-log backup, one recovered Always On warning, and a quiet production estate. During the day, new tickets will arrive from monitoring, application support, developers, and change management.\n\nA working DBA does not solve everything with one clever query. You must establish priority, gather evidence, communicate with the correct owner, protect recoverability and availability, validate every change, update tickets, and leave a handoff the next DBA can trust.\n\nThis module teaches every responsibility used in ForgeDBA's Guided Scenarios and Live Shift Simulator. Complete the lessons and lab before treating the simulator as an assessment.",
+        order: 1,
+      },
+      {
+        id: "daily-ops-shift-control",
+        title: "How a DBA Controls the Shift",
+        type: "lesson",
+        content: "A production shift starts with situational awareness, not random clicking.\n\n**1. Read the handoff**\nIdentify unresolved incidents, failed jobs, degraded replicas, planned changes, temporary access, and work that has a deadline. Do not assume the previous shift resolved an item just because the alert is old.\n\n**2. Establish the operational picture**\nReview monitoring, database state, backup freshness, SQL Agent failures, Always On health, disk capacity, and active critical tickets. Confirm current state with SQL Server evidence.\n\n**3. Triage by risk and impact**\n- P1: active outage, data-loss risk, or severe degradation\n- P2: important failure or request with limited current impact\n- P3: planned or preventative work\n\nRecoverability failures may be P1 even when users see no outage. A failed log backup silently increases the recovery-point risk.\n\n**4. Work through ownership**\nThe DBA owns the database diagnosis and coordination, but not every underlying system. Storage belongs to the storage or Wintel/VM team, network paths to the network team, application behavior to the application team, and vendor files to the integration owner. Escalate with evidence, impact, and a requested action.\n\n**5. Close the loop**\nEvery item ends with validation and documentation. Record what failed, what evidence you collected, what changed, how you proved recovery, and any remaining owner or deadline.",
+        order: 2,
+      },
+      {
+        id: "daily-ops-health",
+        title: "Morning Health Checks and Always On",
+        type: "lesson",
+        content: "A morning health check answers one question: can the production estate safely begin the business day?\n\nReview these areas in a consistent order:\n- SQL Server service and instance availability\n- database state and recovery status\n- backup freshness and failed backup jobs\n- SQL Agent failures since the previous handoff\n- Always On replica connectivity, synchronization, and health\n- blocking, long-running sessions, and abnormal waits\n- data, log, tempdb, and backup-volume capacity\n- error-log entries that require follow-up\n\n**Always On interpretation**\nSYNCHRONIZED and HEALTHY indicate that a synchronous replica is caught up and ready for expected failover behavior. SYNCHRONIZING may be normal for asynchronous replicas, but a new or prolonged change requires investigation. NOT SYNCHRONIZING, DISCONNECTED, or NOT HEALTHY needs immediate attention.\n\nA warning that recovered is not ignored. Record its start and end time, verify present health, look for repetition, and continue monitoring. Do not force a failover merely to prove that the secondary works. Failover testing belongs to an approved change with application owners and a rollback plan.",
+        codeExample: `-- Database state and recovery model
+SELECT name, state_desc, recovery_model_desc, log_reuse_wait_desc
+FROM sys.databases
+ORDER BY name;
+
+-- Always On replica and database synchronization health
+SELECT
+    ag.name AS AvailabilityGroup,
+    ar.replica_server_name,
+    ars.role_desc,
+    ars.connected_state_desc,
+    drs.database_id,
+    DB_NAME(drs.database_id) AS DatabaseName,
+    drs.synchronization_state_desc,
+    drs.synchronization_health_desc
+FROM sys.availability_groups ag
+JOIN sys.availability_replicas ar
+  ON ag.group_id = ar.group_id
+JOIN sys.dm_hadr_availability_replica_states ars
+  ON ar.replica_id = ars.replica_id
+LEFT JOIN sys.dm_hadr_database_replica_states drs
+  ON ar.replica_id = drs.replica_id
+ORDER BY ag.name, ar.replica_server_name, DatabaseName;
+
+-- SQL Server services
+SELECT servicename, status_desc, startup_type_desc, service_account
+FROM sys.dm_server_services;`,
+        order: 3,
+      },
+      {
+        id: "daily-ops-backup-112",
+        title: "Failed Log Backup and OS Error 112",
+        type: "lesson",
+        content: "Windows operating-system error 112 means: **There is not enough space on the disk.**\n\nWhen SQL Server reports error 112 during a backup, distinguish between the database files and the backup destination. The database may remain online while the backup share or backup volume is full. Restarting SQL Server does not create storage space and adds unnecessary user impact.\n\n**Investigation sequence**\n1. Read the job or backup error and identify the exact destination path.\n2. Check free space on the destination drive or share.\n3. Review backup history to identify the last successful full, differential, and log backups.\n4. Confirm the recovery model and current recoverability risk.\n5. Engage the storage/Wintel owner or follow the approved retention runbook. Never delete unknown files simply to make room.\n6. Rerun the failed log backup after space is available.\n7. Verify success in msdb and confirm subsequent log backups continue normally.\n8. Document the failure window and corrective action.\n\nA successful rerun preserves the log-backup sequence. If log backups were missed for an extended period, calculate the increased recovery-point exposure and communicate it.",
+        codeExample: `-- Local fixed-drive free space in MB
+EXEC master.dbo.xp_fixeddrives;
+
+-- Detailed backup history and destination
+SELECT TOP (50)
+    bs.database_name,
+    bs.backup_start_date,
+    bs.backup_finish_date,
+    CASE bs.type WHEN 'D' THEN 'Full' WHEN 'I' THEN 'Differential' WHEN 'L' THEN 'Log' END AS BackupType,
+    bmf.physical_device_name,
+    CAST(bs.backup_size / 1048576.0 AS decimal(12,2)) AS BackupSizeMB
+FROM msdb.dbo.backupset bs
+JOIN msdb.dbo.backupmediafamily bmf
+  ON bs.media_set_id = bmf.media_set_id
+WHERE bs.database_name = 'FIN-PROD'
+ORDER BY bs.backup_finish_date DESC;
+
+-- Rerun only after destination capacity is restored
+BACKUP LOG [FIN-PROD]
+TO DISK = 'B:\\SQLBackups\\FIN-PROD_Log.trn'
+WITH COMPRESSION, CHECKSUM, STATS = 10;`,
+        order: 4,
+      },
+      {
+        id: "daily-ops-agent-dependencies",
+        title: "SQL Agent Failures and External Dependencies",
+        type: "lesson",
+        content: "A failed SQL Agent job is not automatically a SQL Server problem. Jobs often depend on files, network shares, credentials, APIs, SSIS packages, or upstream applications.\n\nStart with job history. Identify the exact failed step, message, start time, retry behavior, and whether earlier steps committed data. Then determine ownership.\n\nFor a missing vendor file:\n1. Verify the configured path and expected filename.\n2. Confirm whether the file exists and whether the Agent service account can access it.\n3. Check the upstream delivery dashboard or contact the integration owner.\n4. Do not repeatedly rerun a job while its dependency is missing. Repeated retries create noise and can duplicate work if an earlier step is not idempotent.\n5. Rerun after the dependency is available.\n6. Validate the job result using row counts, control totals, timestamps, and downstream confirmation.\n\nThe ticket should clearly distinguish the failed SQL Agent step from the actual root cause: delayed upstream delivery, permission failure, network problem, or job logic.",
+        codeExample: `-- Recent SQL Agent job outcomes
+SELECT TOP (100)
+    j.name AS JobName,
+    h.step_id,
+    h.step_name,
+    h.run_status,
+    h.run_date,
+    h.run_time,
+    h.message
+FROM msdb.dbo.sysjobhistory h
+JOIN msdb.dbo.sysjobs j ON h.job_id = j.job_id
+WHERE j.name = 'CustomerImport'
+ORDER BY h.instance_id DESC;
+
+-- Start the job after its dependency is available
+EXEC msdb.dbo.sp_start_job @job_name = N'CustomerImport';`,
+        order: 5,
+      },
+      {
+        id: "daily-ops-blocking",
+        title: "Blocking Triage Without Making It Worse",
+        type: "lesson",
+        content: "Blocking occurs when one session holds a lock another session needs. Waiting sessions are usually victims; the lead blocker is the session at the head of the chain. Killing every waiting session increases user impact without removing the cause.\n\n**Safe investigation sequence**\n1. Confirm the business symptom and affected application.\n2. Capture the blocking chain, wait types, SQL text, login, host, transaction age, and lead blocker.\n3. Determine whether the blocker is active work, an abandoned transaction, or an approved report/change.\n4. Estimate rollback work before termination. KILL WITH STATUSONLY can report rollback progress after termination.\n5. Contact the application/report owner when possible and obtain the appropriate operational approval.\n6. Terminate only the lead blocker when impact justifies it.\n7. Validate that waits and application latency recover.\n8. Preserve the evidence for root-cause analysis.\n\nLCK_M_S means a session is waiting for a shared lock. It identifies the wait category, not automatically the guilty query. Follow the blocking_session_id chain to the root.",
+        codeExample: `-- Active requests, waits, and blockers
+SELECT
+    r.session_id,
+    r.blocking_session_id,
+    r.status,
+    r.wait_type,
+    r.wait_time,
+    r.open_transaction_count,
+    s.login_name,
+    s.host_name,
+    DB_NAME(r.database_id) AS DatabaseName,
+    SUBSTRING(t.text,
+      (r.statement_start_offset / 2) + 1,
+      ((CASE r.statement_end_offset WHEN -1 THEN DATALENGTH(t.text)
+         ELSE r.statement_end_offset END - r.statement_start_offset) / 2) + 1
+    ) AS CurrentStatement
+FROM sys.dm_exec_requests r
+JOIN sys.dm_exec_sessions s ON r.session_id = s.session_id
+CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) t
+WHERE r.session_id <> @@SPID
+ORDER BY r.blocking_session_id DESC, r.session_id;
+
+-- Legacy quick view; useful for orientation, not sufficient evidence alone
+EXEC sp_who2;
+
+-- Use only after evidence, ownership, impact, and rollback are understood
+KILL 184;
+KILL 184 WITH STATUSONLY;`,
+        order: 6,
+      },
+      {
+        id: "daily-ops-access",
+        title: "Production Access Requests and Least Privilege",
+        type: "lesson",
+        content: "Approval does not make excessive access safe. A manager may approve the business need, but the DBA must translate that need into the smallest technical permission that completes the task.\n\nBefore granting production access, confirm:\n- the exact task and objects involved\n- the environment and database\n- the required actions: read, execute, alter, or deploy\n- the approving authority and ticket\n- start time, expiration, and removal owner\n- whether an existing role already provides the approved access\n\nA developer who needs to execute and inspect one procedure does not need db_owner. Grant EXECUTE and VIEW DEFINITION on that procedure, make the access time-bound, test it using the intended identity, and schedule removal. Never share a DBA service account.\n\nRecord the before state, commands executed, validation, expiration, and removal task. Privileged access should be attributable to one identity.",
+        codeExample: `USE [SALES-PROD];
+
+-- Example of object-level least privilege
+GRANT EXECUTE ON OBJECT::dbo.usp_OrderTrace TO [DOMAIN\\DeveloperName];
+GRANT VIEW DEFINITION ON OBJECT::dbo.usp_OrderTrace TO [DOMAIN\\DeveloperName];
+
+-- Verify effective permissions under the user's database identity
+EXECUTE AS USER = 'DOMAIN\\DeveloperName';
+SELECT * FROM fn_my_permissions('dbo.usp_OrderTrace', 'OBJECT');
+REVERT;
+
+-- Remove when the approved window ends
+REVOKE EXECUTE ON OBJECT::dbo.usp_OrderTrace FROM [DOMAIN\\DeveloperName];
+REVOKE VIEW DEFINITION ON OBJECT::dbo.usp_OrderTrace FROM [DOMAIN\\DeveloperName];`,
+        order: 7,
+      },
+      {
+        id: "daily-ops-change",
+        title: "Executing an Approved Production Change",
+        type: "lesson",
+        content: "The DBA's job during a production deployment is controlled execution—not improvisation. An approved change defines scope, window, owners, validation, and rollback.\n\n**Before execution**\n- confirm the change/CAB approval and maintenance window\n- verify the script matches the reviewed package\n- confirm backup and recovery readiness\n- review blocking, long transactions, free space, and dependencies\n- confirm application, QA, and rollback owners are present\n- record the pre-change baseline\n\n**During execution**\nRun only the approved script. Capture start time, messages, row counts, duration, and unexpected behavior. Stop and escalate if actual behavior exceeds scope or a stop condition is reached. Do not rewrite the procedure directly in production because you noticed an unrelated improvement.\n\n**After execution**\nValidate the database objects, application smoke tests, error rate, latency, waits, job behavior, and monitoring. Keep the change under observation for the agreed period. Close only after technical and business validation. If validation fails, follow the tested rollback—not an improvised rescue.",
+        checklistItems: [
+          "Approval and maintenance window verified",
+          "Exact production script checksum or version verified",
+          "Backup and rollback readiness confirmed",
+          "Blocking, transactions, and capacity checked",
+          "Application and QA owners present",
+          "Approved script executed without scope expansion",
+          "Database and application validation passed",
+          "Monitoring remained healthy and evidence was attached"
+        ],
+        order: 8,
+      },
+      {
+        id: "daily-ops-capacity",
+        title: "Capacity Forecasting Before It Becomes an Incident",
+        type: "lesson",
+        content: "Capacity work is preventative DBA work. Waiting for a disk to reach 95% turns a predictable trend into an emergency.\n\nA useful capacity review includes current size, free space, growth during a defined period, the fastest-growing files or tables, autogrowth configuration, retention opportunities, and a forecast date for the next threshold.\n\nAt 83% used with six percentage points of growth per month, a 90% threshold is less than three weeks away. That is enough evidence to open a planned request with the storage or Wintel/VM team. Include the required capacity, business system, forecast, requested completion date, and owner.\n\nDo not use routine database shrinking as a capacity strategy. Shrinking can create fragmentation and does not remove the cause of continued growth. First determine whether growth is legitimate, caused by retention, caused by a stalled log-reuse condition, or caused by poor file/autogrowth configuration.",
+        codeExample: `-- Database file size, used space, free space, and autogrowth
+SELECT
+    DB_NAME() AS DatabaseName,
+    name AS LogicalFile,
+    type_desc,
+    physical_name,
+    size * 8.0 / 1024 AS SizeMB,
+    FILEPROPERTY(name, 'SpaceUsed') * 8.0 / 1024 AS UsedMB,
+    (size - FILEPROPERTY(name, 'SpaceUsed')) * 8.0 / 1024 AS FreeMB,
+    CASE WHEN is_percent_growth = 1
+         THEN CAST(growth AS varchar(20)) + '%'
+         ELSE CAST(growth * 8.0 / 1024 AS varchar(20)) + ' MB'
+    END AS Autogrowth
+FROM sys.database_files;
+
+-- Largest tables by reserved space
+SELECT TOP (20)
+    s.name AS SchemaName,
+    t.name AS TableName,
+    SUM(p.rows) AS RowCount,
+    SUM(a.total_pages) * 8.0 / 1024 AS ReservedMB
+FROM sys.tables t
+JOIN sys.schemas s ON t.schema_id = s.schema_id
+JOIN sys.indexes i ON t.object_id = i.object_id
+JOIN sys.partitions p ON i.object_id = p.object_id AND i.index_id = p.index_id
+JOIN sys.allocation_units a ON p.partition_id = a.container_id
+GROUP BY s.name, t.name
+ORDER BY ReservedMB DESC;`,
+        order: 9,
+      },
+      {
+        id: "daily-ops-handoff",
+        title: "Ticket Evidence and End-of-Shift Handoff",
+        type: "lesson",
+        content: "A good handoff allows another DBA to continue safely without reconstructing your entire shift. 'Everything looks good' is not a handoff. A list of ticket numbers alone is also insufficient.\n\nFor each important item, record:\n- **Status:** resolved, monitoring, waiting, or open\n- **Impact:** users, recoverability, performance, or no current impact\n- **Evidence:** error, query result, timestamp, validation, or monitoring state\n- **Action taken:** exact change, rerun, escalation, or permission grant\n- **Validation:** how you proved recovery or success\n- **Remaining risk:** what could still go wrong\n- **Next action:** a concrete step\n- **Owner and deadline:** one accountable team/person and a time\n\nExample: 'INC-2084 resolved 06:22. FIN-PROD log backup failed with OS error 112 because backup volume B: had 812 MB free. Storage cleared expired staging files; rerun succeeded and msdb history confirms the log sequence continued. Monitor next scheduled backup at 06:30. Owner: day DBA.'\n\nTimed access must always be handed off if removal occurs after your shift. Capacity work must include the infrastructure request, owner, target date, and current risk.",
+        order: 10,
+      },
+      {
+        id: "daily-ops-lab",
+        title: "Lab: Rehearse a Normal DBA Day",
+        type: "lab",
+        content: "**Objective:** Practice every skill before entering Live Shift. Use a non-production SQL Server instance or written evidence where a feature such as Always On is unavailable.\n\n**Part 1 — Start-of-shift control**\n1. Write a five-item overnight handoff containing one unresolved issue.\n2. Rank the work as P1, P2, or P3 and explain the business/data risk.\n3. Run database-state, backup-history, failed-job, and disk-capacity checks.\n\n**Part 2 — Backup failure**\n1. Review the error-112 runbook.\n2. Identify the backup destination and available space.\n3. Write the escalation message you would send to the storage/Wintel owner.\n4. Run a test log backup and verify it in msdb.\n\n**Part 3 — Job dependency**\n1. Inspect job history and identify the failed step.\n2. Document the upstream dependency and owner.\n3. Rerun only after the dependency is present.\n4. Validate using a row count or control total.\n\n**Part 4 — Blocking**\n1. Create two test sessions where one transaction blocks another.\n2. Capture the blocking chain, SQL text, login, host, wait type, and transaction state.\n3. Estimate the business impact and rollback risk before ending the blocker.\n4. Validate that waits clear.\n\n**Part 5 — Access, change, and capacity**\n1. Translate a db_owner request into object-level permissions with an expiration.\n2. Build a change checklist containing prechecks, rollback, validation, and monitoring.\n3. Collect file and table sizes and write a capacity request containing a forecast and owner.\n\n**Part 6 — Handoff**\nWrite the final handoff for all five parts. Another learner should be able to state current status, remaining risk, next action, owner, and deadline without asking you a question.\n\nAfter completing this lab, run Guided Scenarios for coaching and then Live Shift without using the lesson as a script.",
+        order: 11,
+      },
+      {
+        id: "daily-ops-checklist",
+        title: "Live Shift Readiness Checklist",
+        type: "checklist",
+        content: "You are ready for the simulator when you can do all of the following without guessing:",
+        checklistItems: [
+          "Triage handoff work by user impact, availability, recoverability, and deadline",
+          "Run and interpret a production morning health check",
+          "Interpret Always On synchronization and health states without forcing an unnecessary failover",
+          "Explain OS error 112 and investigate the actual backup destination",
+          "Review backup history, rerun a log backup, and verify success",
+          "Diagnose a SQL Agent step failure and coordinate an external dependency",
+          "Capture a blocking chain and identify the lead blocker before considering KILL",
+          "Translate a broad access request into time-bound least privilege",
+          "Execute an approved change using prechecks, validation, monitoring, and rollback criteria",
+          "Collect capacity evidence and forecast a threshold date",
+          "Write a handoff containing status, evidence, risk, next action, owner, and deadline"
+        ],
+        order: 12,
+      }
+    ]
   }
 ];
 
