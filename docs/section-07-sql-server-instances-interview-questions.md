@@ -40,3 +40,22 @@ No. Instances have separate SQL Server services and configurations but still com
 
 ## Interview memory line
 **VM → OS → SQL Server (instance) → SSMS.** An instance is **not** a database, and SSMS is **not** an instance.
+
+## Class Notes — October 17, 2026: Launching SSMS and connection troubleshooting
+
+### Q11. After installing SQL Server and SSMS on a VM, which program do you open?
+Log in to the VM and launch **SQL Server Management Studio (SSMS)** from the Start menu, not SQL Server Installation Center. The SQL Server Database Engine normally runs as a Windows service. In SSMS, choose the server/instance name and connect (e.g., `localhost` for a local default instance or `localhost\\SQL2022` for a named instance).
+
+### Q12. How can you tell which SSMS version is opening, before connecting?
+Read the small version label on the **bottom-left of the SSMS splash screen**. The classroom screenshot showed **v20.2.1**. After launching, **Help → About** also provides the SSMS version. This is separate from the SQL Server Database Engine version.
+
+### Q13. What does 'A connection was successfully established with the server, but then an error occurred during the login process ... The certificate chain was issued by an authority that is not trusted' mean?
+The network connection to SQL Server succeeded, but encrypted-connection certificate validation failed because the server's certificate chain was not trusted by the SSMS client. It does **not** mean SSMS or the Database Engine needs reinstalling.
+
+### Q14. How did we resolve the certificate trust error in our training VM?
+In SSMS, dismiss the error → return to **Connect to Server** → open **Options >>** → find **Trust server certificate** (under Connection Properties or the relevant connection/security tab depending on the SSMS version) → enable it → try **Connect** again. This bypasses certificate-chain validation and is suitable only when you knowingly trust the training server; it is **not** the preferred production fix.
+
+### Q15. What is the correct fix for a SQL Server certificate trust issue in production?
+Configure SQL Server to present a valid TLS certificate matching the server name, with a certificate chain trusted by the connecting clients. Do not routinely bypass certificate validation in production.
+
+**Today's memory line:** Launch SSMS → read its version on the splash screen → connect to SQL Server → if certificate-chain validation fails in a trusted lab, select *Trust server certificate*.
